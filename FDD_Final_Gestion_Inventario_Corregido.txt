@@ -1,0 +1,1211 @@
+﻿DOCUMENTO FUNCIONAL DE DISENO
+
+Sistema de Gestion
+de Inventario
+
+Documento Funcional de Diseno (FDD)
+
+Proyecto: Gestion de Inventario con Microservicios
+
+Tecnologias: Spring Boot, Spring Security, Spring Cloud Gateway,
+
+Eureka, JWT, RabbitMQ, Docker, MySQL
+
+Tipo de documento: Documento Funcional de Diseno
+
+Ciclo formativo: Grado Superior de DAM
+
+
+
+FDD - Gestion de Inventario
+
+Indice
+
+1.  Introduccion del proyecto
+
+2.  Objetivos generales y especificos
+
+3.  Alcance funcional
+
+4.  Arquitectura general del sistema
+
+5.  Diseno de microservicios
+
+    5.1.  MS-Users
+
+    5.2.  MS-Catalog
+
+    5.3.  MS-Suppliers
+
+    5.4.  MS-Inventory
+
+    5.5.  MS-Audit
+
+    5.6.  MS-Mail
+
+6.  Seguridad y autenticacion
+
+7.  Comunicacion entre servicios
+
+8.  Uso de RabbitMQ
+
+9.  API Gateway y Eureka
+
+10.  Modelo de datos
+
+11.  Endpoints organizados por microservicio
+
+12.  Flujos principales del sistema
+
+13.  Trazabilidad, logs y auditoria
+
+14.  Despliegue con Docker
+
+15.  Justificacion tecnica de las decisiones
+
+16.  Conclusion
+
+Gestion de Inventario - Microservicios Pagina 2
+
+
+
+FDD - Gestion de Inventario
+
+1. Introduccion del proyecto
+El presente documento describe el diseno funcional y tecnico de un sistema de gestion de
+inventario orientado a pequenas y medianas empresas que necesitan controlar el flujo de
+productos en uno o varios almacenes. El sistema permite a los empleados registrar entradas y
+salidas de stock, consultar el inventario actual, gestionar el catalogo de productos y los datos de
+proveedores, y disponer de un historial de auditoria sobre todos los movimientos.
+
+El proyecto se ha disenado siguiendo una arquitectura de microservicios sobre Spring Boot, con
+Spring Cloud Gateway como unico punto de entrada, Eureka como service registry y RabbitMQ
+como broker de mensajeria para los procesos asincronos (auditoria y envio de correos). La
+autenticacion se resuelve con tokens JWT firmados, lo que permite que el Gateway valide cada
+peticion de forma local sin sobrecargar al servicio de usuarios. El sistema completo se despliega
+mediante Docker Compose, con cada microservicio en su propio contenedor y su propia base de
+datos MySQL.
+
+Este FDD recoge la arquitectura, las responsabilidades de cada microservicio, el modelo de datos,
+los endpoints publicados, los flujos principales de uso, las decisiones de seguridad y la estrategia
+de despliegue. Esta dirigido a documentar el proyecto de forma que pueda ser implementado,
+defendido tecnicamente y mantenido por personas distintas a su autor.
+
+2. Objetivos generales y especificos
+2.1. Objetivo general
+Disenar e implementar un sistema de gestion de inventario basado en microservicios, capaz de
+cubrir el ciclo completo de control de stock (productos, proveedores, entradas, salidas, consultas y
+auditoria) con un esquema de seguridad adecuado y una arquitectura defendible tecnicamente,
+manteniendo el alcance del proyecto dentro de lo abordable en un Trabajo Fin de Ciclo de DAM.
+
+2.2. Objetivos especificos
+•  Implementar autenticacion mediante JWT con confirmacion de cuenta por correo electronico
+y dos roles funcionales (ADMIN y EMPLEADO).
+
+•  Disenar microservicios con responsabilidades claras y sin solapes: usuarios, catalogo,
+proveedores, inventario, auditoria y envio de correos.
+
+•  Asegurar que cada microservicio gestione su propia base de datos MySQL, manteniendo las
+relaciones entre microservicios como relaciones logicas y no como claves foraneas fisicas.
+
+•  Centralizar el acceso al backend mediante un API Gateway que valide los tokens JWT y
+propague la identidad del usuario a los microservicios internos.
+
+•  Aplicar service discovery con Eureka para que el Gateway no dependa de URLs fijas.
+
+•  Utilizar RabbitMQ para los procesos asincronos donde aporta valor real: registrar la auditoria
+de movimientos y enviar correos de confirmacion.
+
+•  Garantizar la trazabilidad de los movimientos de stock mediante un registro append-only en
+MS-Audit, independiente del ciclo de vida de productos y proveedores.
+
+•  Empaquetar y desplegar la totalidad del sistema con Docker Compose, documentando los
+healthchecks, las dependencias entre servicios y la gestion de secretos mediante variables de
+
+Gestion de Inventario - Microservicios Pagina 3
+
+
+
+FDD - Gestion de Inventario
+
+entorno.
+
+3. Alcance funcional
+3.1. Funcionalidades incluidas
+
+•  Registro de usuarios con confirmacion de cuenta por correo y token con expiracion.
+
+•  Login con generacion de token JWT firmado.
+
+•  Gestion de roles ADMIN y EMPLEADO (un rol por usuario).
+
+•  CRUD de productos con SKU unico y borrado logico.
+
+•  CRUD de proveedores.
+
+•  Registro de entradas y salidas de stock con control de cantidades.
+
+•  Consulta del stock disponible por producto.
+
+•  Listado de movimientos historicos por producto y por usuario.
+
+•  Auditoria de movimientos con filtrado por rango de fechas y paginacion.
+
+•  Envio de correos transaccionales (confirmacion de cuenta).
+
+•  Despliegue completo con Docker Compose en local.
+
+3.2. Funcionalidades fuera del alcance
+Las siguientes capacidades son habituales en sistemas de produccion pero se han descartado
+deliberadamente para mantener el proyecto dentro del alcance razonable de un Trabajo Fin de
+Ciclo:
+
+•  Refresh tokens y revocacion de tokens mediante lista negra.
+
+•  Federacion con proveedores externos (OAuth2, OpenID Connect, Google, Microsoft).
+
+•  Gestion de multiples almacenes y multi-tenant.
+
+•  Comunicacion en tiempo real con WebSockets o Server-Sent Events.
+
+•  Reportes avanzados, exportacion a Excel, dashboards de business intelligence.
+
+•  Despliegue en Kubernetes o en la nube; el sistema se entrega para ejecucion local con
+Docker Compose.
+
+•  Almacenamiento de datos a gran escala (logs masivos, data lakes); MySQL es suficiente
+para el volumen previsto.
+
+Gestion de Inventario - Microservicios Pagina 4
+
+
+
+FDD - Gestion de Inventario
+
+4. Arquitectura general del sistema
+El sistema se compone de un frontend estatico y un conjunto de microservicios backend. Todas
+las peticiones del frontend pasan por el API Gateway, que es el unico componente backend
+expuesto al host. Los microservicios internos se comunican entre si por la red interna de Docker,
+ya sea de forma sincrona (HTTP) o asincrona (RabbitMQ).
+
+4.1. Componentes principales
+Componente Descripcion
+
+Frontend Aplicacion web en HTML, CSS y JavaScript puro servida por nginx. Es la unica interfaz
+de usuario.
+
+API Gateway Spring Cloud Gateway. Unico punto de entrada al backend. Valida los JWT, aplica reglas
+de autorizacion por ruta, gestiona CORS y reenvia las peticiones a los microservicios
+destino mediante service discovery.
+
+Eureka Server Service registry. Cada microservicio se registra al arrancar. El Gateway lo consulta para
+encontrar la instancia correspondiente.
+
+MS-Users Gestiona el ciclo de vida de los usuarios (registro, confirmacion, consulta) y emite los
+tokens JWT en el login.
+
+MS-Catalog CRUD de productos. Cada producto tiene un SKU unico.
+
+MS-Suppliers CRUD de proveedores.
+
+MS-Inventory Gestion del stock y registro de movimientos (entradas y salidas). Publica eventos de
+auditoria en RabbitMQ tras cada movimiento.
+
+MS-Audit Almacenamiento append-only del historial de movimientos. Consume eventos de
+RabbitMQ. Permite consultar la auditoria.
+
+MS-Mail Envio de correos transaccionales mediante SMTP. Consume eventos de RabbitMQ con
+la informacion del correo a enviar.
+
+RabbitMQ Broker de mensajeria. Soporta los flujos asincronos (auditoria y correos) con colas
+durables y mensajes persistentes.
+
+MySQL Servidor MySQL con una base de datos por microservicio (db_users, db_catalog,
+db_suppliers, db_inventory, db_audit). Las relaciones entre microservicios son logicas,
+no fisicas.
+
+Gestion de Inventario - Microservicios Pagina 5
+
+
+
+FDD - Gestion de Inventario
+
+4.2. Topologia logica
+
+              +-----------+
+
+              | Frontend  |
+
+              |  (nginx)  |
+
+              +-----+-----+
+
+                    | HTTP + Authorization: Bearer <jwt>
+
+                    v
+
+              +-----+-----+         +----------+
+
+              |  Gateway  | <-----> |  Eureka  |
+
+              +-----+-----+         +----------+
+
+                    |
+
+       +------------+------------+-------------+
+
+       |            |            |             |
+
+       v            v            v             v
+
+   +--------+ +-----------+ +-----------+ +-------------+
+
+   |MS-Users| |MS-Catalog | |MS-Suppli. | |MS-Inventory |
+
+   +---+----+ +-----+-----+ +-----+-----+ +------+------+
+
+       |            |             |              |
+
+   +---+---+    +---+---+    +----+--+      +----+--+
+
+   |db_user|    |db_cat |    |db_sup |      |db_inv |
+
+   +-------+    +-------+    +-------+      +-------+
+
+ 
+
+   MS-Inventory  -->  cola.auditoria  -->  MS-Audit  --> db_audit
+
+   MS-Users      -->  cola.mails      -->  MS-Mail   --> SMTP
+
+                            (RabbitMQ)
+
+Solo el Frontend, el API Gateway y, opcionalmente en desarrollo, las consolas de Eureka y RabbitMQ
+publican puerto al host. El resto de microservicios solo existen en la red interna de Docker.
+
+Gestion de Inventario - Microservicios Pagina 6
+
+
+
+FDD - Gestion de Inventario
+
+5. Diseno de microservicios
+Cada microservicio tiene una responsabilidad acotada y una unica base de datos. Los
+microservicios no comparten esquema; las referencias entre ellos (por ejemplo, producto_id en
+movimientos) son relaciones logicas mantenidas por la aplicacion, no claves foraneas fisicas.
+
+5.1. MS-Users
+Responsabilidad. Gestion del ciclo de vida del usuario y emision de credenciales. Es el unico
+microservicio que conoce las contrasenas (almacenadas siempre como hash BCrypt) y el unico
+que firma tokens JWT.
+
+Acciones principales:
+
+•  Registrar un usuario nuevo con email, nombre, contrasena y rol EMPLEADO por defecto. La
+cuenta queda como no confirmada hasta que el usuario active el enlace recibido por correo.
+
+•  Generar un token de confirmacion (UUID) con expiracion de 24 horas y publicar un evento en
+cola.mails para que MS-Mail envie el correo.
+
+•  Activar la cuenta cuando el usuario llega al endpoint de confirmacion con un token valido y no
+caducado.
+
+•  Validar las credenciales en el login y emitir un JWT firmado con HS256, con claims sub
+(email), roles, iat y exp (1 hora).
+
+•  Devolver los datos del usuario autenticado en /api/auth/me.
+
+Base de datos: db_users. Eventos publicados: mensajes en cola.mails. Eventos
+consumidos: ninguno.
+
+5.2. MS-Catalog
+Responsabilidad. Gestion del catalogo de productos. Cada producto se identifica por un SKU
+unico ademas del id interno.
+
+Acciones principales:
+
+•  Listar, consultar, crear, modificar y dar de baja productos.
+
+•  El borrado es logico (campo activo): se mantiene la fila en la base de datos para preservar
+la trazabilidad de los movimientos historicos asociados al producto.
+
+•  Validar que el SKU sea unico antes de permitir la creacion.
+
+Base de datos: db_catalog. Eventos publicados: ninguno. Eventos consumidos: ninguno.
+
+5.3. MS-Suppliers
+Responsabilidad. Gestion del catalogo de proveedores. Cada proveedor se identifica por un
+email unico.
+
+Acciones principales:
+
+•  Listar, consultar, crear, modificar y eliminar proveedores.
+
+•  Validar la unicidad del email del proveedor.
+
+Gestion de Inventario - Microservicios Pagina 7
+
+
+
+FDD - Gestion de Inventario
+
+Base de datos: db_suppliers. Eventos publicados: ninguno. Eventos consumidos:
+ninguno.
+
+5.4. MS-Inventory
+Responsabilidad. Gestion del stock disponible y registro de los movimientos (entradas y salidas)
+sobre cada producto.
+
+Acciones principales:
+
+•  Registrar una entrada de stock indicando producto, proveedor y cantidad. Actualiza la
+cantidad disponible y crea una fila en movimientos.
+
+•  Registrar una salida de stock indicando producto y cantidad. Verifica que haya stock
+suficiente; si no, devuelve 409 Conflict.
+
+•  Consultar el stock disponible de un producto.
+
+•  Consultar el listado de movimientos historicos.
+
+•  Tras cada movimiento, publicar un evento en cola.auditoria con todos los datos para
+que MS-Audit los persista.
+
+Base de datos: db_inventory. Eventos publicados: mensajes en cola.auditoria.
+Eventos consumidos: ninguno. Identidad del usuario: se obtiene de la cabecera
+X-User-Email inyectada por el Gateway.
+
+5.5. MS-Audit
+Responsabilidad. Almacenamiento append-only del historial de movimientos. Es la fuente de
+verdad para auditoria y trazabilidad.
+
+Acciones principales:
+
+•  Consumir mensajes de cola.auditoria y persistirlos en la tabla logs.
+
+•  Exponer endpoints de consulta con filtros por producto, por usuario y por rango de fechas,
+con paginacion.
+
+•  La tabla logs es append-only: nunca se actualiza ni se borra. Los registros sobreviven al
+borrado de productos, proveedores o usuarios.
+
+Base de datos: db_audit. Eventos publicados: ninguno. Eventos consumidos:
+cola.auditoria.
+
+5.6. MS-Mail
+Responsabilidad. Envio de correos transaccionales mediante un servidor SMTP externo
+(configurado por variables de entorno).
+
+Acciones principales:
+
+•  Consumir mensajes de cola.mails con la informacion del destinatario, el asunto y el
+cuerpo del correo.
+
+•  Construir el contenido final del correo (incluyendo el enlace de confirmacion para los
+registros, generado a partir de la variable APP_PUBLIC_URL).
+
+•  Enviar el correo via SMTP. Si el envio falla, RabbitMQ reintentara la entrega; tras varios
+fallos, el mensaje pasa a la DLQ cola.mails.dlq.
+
+Gestion de Inventario - Microservicios Pagina 8
+
+
+
+FDD - Gestion de Inventario
+
+Base de datos: ninguna. Eventos publicados: ninguno. Eventos consumidos: cola.mails.
+
+Gestion de Inventario - Microservicios Pagina 9
+
+
+
+FDD - Gestion de Inventario
+
+6. Seguridad y autenticacion
+6.1. Esquema general
+La autenticacion del sistema se basa en JSON Web Tokens (JWT) firmados con HMAC-SHA256.
+El usuario se autentica una sola vez en el endpoint de login, MS-Users emite un token y el cliente
+lo envia en cada peticion posterior en la cabecera Authorization: Bearer <jwt>. El API
+Gateway valida la firma y la fecha de expiracion de cada token de forma local, sin necesidad de
+consultar a MS-Users en cada peticion.
+
+6.2. Roles y autorizacion
+El sistema define dos roles funcionales. Cada usuario tiene exactamente un rol, almacenado en la
+columna rol de la tabla usuarios.
+
+Rol Permisos principales
+
+ADMIN Acceso completo al sistema. CRUD de productos y proveedores. Registro de entradas y
+salidas. Consulta total de la auditoria.
+
+EMPLEADO Lectura del catalogo y de los proveedores. Registro de entradas y salidas. Consulta del
+stock y de movimientos. Sin permiso para borrar productos ni proveedores.
+
+6.3. Almacenamiento de contrasenas
+Las contrasenas se almacenan exclusivamente como hash BCrypt mediante
+BCryptPasswordEncoder de Spring Security. MS-Users es el unico microservicio que conoce
+las contrasenas y el unico que ejecuta la comparacion del hash. La politica minima exigida en el
+registro y en el cambio de contrasena es: longitud minima de 8 caracteres, al menos un digito y al
+menos una letra. La validacion se realiza siempre en el backend.
+
+6.4. Estructura del JWT
+El token JWT esta compuesto por tres partes (header, payload y firma). El payload incluye los
+siguientes claims:
+
+Claim Significado
+
+sub Subject. Email del usuario autenticado.
+
+roles Lista con el rol del usuario (ADMIN o EMPLEADO).
+
+iat Issued At. Timestamp Unix en segundos del momento de emision.
+
+exp Expiration. Timestamp Unix en segundos a partir del cual el token deja de ser valido. La
+caducidad por defecto es de 1 hora.
+
+Ejemplo del payload de un JWT:
+
+{
+  "sub": "empleado@empresa.es",
+  "roles": ["EMPLEADO"],
+  "iat": 1735300000,
+
+Gestion de Inventario - Microservicios Pagina 10
+
+
+
+FDD - Gestion de Inventario
+
+  "exp": 1735303600
+}
+
+6.5. Validacion en el Gateway
+El API Gateway implementa un GlobalFilter que aplica el siguiente criterio a cada peticion
+entrante:
+
+1.  Si la ruta esta declarada como publica (login, registro y confirmacion), la peticion se reenvia
+sin comprobaciones de token.
+
+2.  Si la ruta es protegida, se exige la cabecera Authorization con el esquema Bearer. Si no
+esta presente, se devuelve 401 Unauthorized.
+
+3.  Se valida la firma del JWT con el secreto compartido entre MS-Users y el Gateway. Si la
+firma es invalida, se devuelve 401.
+
+4.  Se comprueba que el claim exp no haya pasado. Si el token ha caducado, se devuelve 401.
+
+5.  Se comprueba que el rol del usuario tenga permiso sobre la ruta. Si no lo tiene, se devuelve
+403 Forbidden.
+
+6.  Antes de reenviar la peticion al microservicio destino, el Gateway elimina la cabecera
+Authorization e inyecta dos cabeceras de confianza: X-User-Email y X-User-Roles. El
+JWT no se reenvia a los microservicios internos.
+
+6.6. Control de errores en el login
+Cualquier fallo de autenticacion (email inexistente, contrasena incorrecta o cuenta no confirmada)
+devuelve un 401 Unauthorized con un mensaje generico unico. La distincion entre los distintos
+motivos solo se registra en el log interno del servidor. Esto evita que un atacante pueda enumerar
+cuentas registradas a traves de los mensajes de error.
+
+6.7. HTTPS y CORS
+En entorno local de desarrollo se admite HTTP. En cualquier despliegue real es obligatorio
+HTTPS, ya que un JWT interceptado sin TLS sigue siendo utilizable por un atacante hasta su
+expiracion. El API Gateway configura CORS de forma restrictiva, permitiendo unicamente el origen
+del frontend y los metodos GET, POST, PUT, DELETE y OPTIONS. No se utiliza el comodin * en
+combinacion con credenciales.
+
+6.8. Almacenamiento del JWT en el frontend
+El frontend almacena el token recibido en sessionStorage y lo adjunta automaticamente en
+cada peticion mediante un interceptor JavaScript. Se ha optado por sessionStorage frente a una
+cookie HttpOnly por simplicidad de implementacion en el frontend (HTML, CSS y JS puro),
+aceptando como contrapartida la necesidad de proteger la aplicacion frente a ataques XSS
+mediante sanitizacion de la salida y validacion de las entradas.
+
+Gestion de Inventario - Microservicios Pagina 11
+
+
+
+FDD - Gestion de Inventario
+
+7. Comunicacion entre servicios
+7.1. Comunicacion sincrona
+Toda la comunicacion sincrona entre el frontend y el backend pasa por el API Gateway. El
+frontend nunca conoce las URLs internas de los microservicios. Los microservicios internos no se
+llaman entre si por REST de forma habitual: cada uno gestiona su propio dominio. Solo el
+Gateway resuelve las direcciones internas, consultando Eureka.
+
+7.2. Propagacion de la identidad del usuario
+Cuando el Gateway valida un JWT correcto, antes de reenviar la peticion a su destino inyecta dos
+cabeceras internas:
+
+•  X-User-Email: email del usuario autenticado, extraido del claim sub.
+
+•  X-User-Roles: lista de roles del usuario, extraida del claim roles.
+
+Los microservicios internos confian en estas cabeceras porque la red interna de Docker solo
+expone los microservicios al Gateway: ningun otro componente puede inyectarlas legitimamente.
+MS-Inventory, por ejemplo, lee X-User-Email para registrar quien ha realizado un movimiento.
+
+7.3. Comunicacion asincrona
+Los flujos en los que la respuesta no es relevante para el usuario y en los que se quiere
+desacoplar al productor del consumidor se resuelven mediante eventos en RabbitMQ.
+Concretamente:
+
+•  MS-Inventory publica un evento por cada movimiento. MS-Audit lo consume y lo persiste.
+
+•  MS-Users publica un evento por cada correo a enviar (confirmacion de cuenta). MS-Mail lo
+consume y realiza el envio SMTP.
+
+7.4. Relaciones logicas entre microservicios
+Dado que cada microservicio tiene su propia base de datos, no existen claves foraneas fisicas
+entre tablas pertenecientes a microservicios distintos. Las referencias se mantienen como
+relaciones logicas: por ejemplo, movimientos.producto_id apunta a un id de la tabla
+productos de MS-Catalog, pero la integridad se garantiza a nivel de aplicacion (validaciones en
+el codigo, eventos publicados cuando un producto se da de baja logicamente). Esta es una
+decision intencional para preservar la independencia de los microservicios.
+
+8. Uso de RabbitMQ
+8.1. Por que RabbitMQ y donde
+RabbitMQ se utiliza unicamente en aquellos flujos en los que el resultado del procesamiento no
+debe bloquear la respuesta al usuario y en los que conviene que el productor y el consumidor
+puedan funcionar independientemente. Esto evita el antipatron de "meter una cola por moda".
+Concretamente, se usa en dos flujos:
+
+•  Auditoria de movimientos. Cuando MS-Inventory registra una entrada o salida, lo que el
+usuario necesita saber inmediatamente es si la operacion ha sido aceptada y cual es el nuevo
+
+Gestion de Inventario - Microservicios Pagina 12
+
+
+
+FDD - Gestion de Inventario
+
+stock. Persistir el registro de auditoria es importante pero no urgente, y no debe retrasar la
+respuesta. Si MS-Audit estuviera caido, los mensajes esperarian en la cola y se procesarian al
+volver.
+
+•  Envio de correos. El envio SMTP puede tardar varios segundos y tiene una tasa de fallo no
+despreciable (rebotes, conexion lenta con el servidor SMTP). Si MS-Users dependiera
+sincronamente de MS-Mail para completar el registro, cualquier problema con el SMTP
+bloquearia a los usuarios al darse de alta.
+
+Los flujos sincronos del sistema (login, consulta de stock, listados de productos, etc.) se resuelven
+por HTTP a traves del Gateway: meterlos en una cola seria sobreingenieria.
+
+8.2. Topologia del broker
+Cola Productor Consumidor Proposito
+
+cola.auditoria MS-Inventory MS-Audit Eventos de movimientos de stock para
+persistir en el historial.
+
+cola.auditoria.dlq RabbitMQ Inspeccion manual Mensajes de auditoria que han fallado
+tras varios reintentos.
+
+cola.mails MS-Users MS-Mail Solicitudes de envio de correo
+(confirmacion de cuenta).
+
+cola.mails.dlq RabbitMQ Inspeccion manual Mensajes de mail que han fallado tras
+varios reintentos.
+
+8.3. Garantias y resiliencia
+•  Las colas son durables: sobreviven al reinicio del broker.
+
+•  Los mensajes se publican como persistent: se escriben a disco.
+
+•  Cada cola tiene una Dead Letter Queue asociada. Tras un numero definido de reintentos
+fallidos, el mensaje se desvia a la DLQ para inspeccion manual desde la consola de RabbitMQ
+(puerto 15672 en desarrollo).
+
+•  Si MS-Audit o MS-Mail estan caidos, los mensajes se acumulan en la cola principal sin
+perderse. Cuando el consumidor vuelve a estar disponible, los procesa en el mismo orden en
+que llegaron.
+
+8.4. Ejemplo de mensaje de auditoria
+
+{
+  "producto_id": 42,
+  "proveedor_id": 7,
+  "usuario_email": "empleado@empresa.es",
+  "accion": "ENTRADA",
+  "cantidad": 25,
+  "fecha": "2025-09-12T10:32:11",
+  "stock_resultante": 130
+}
+
+Gestion de Inventario - Microservicios Pagina 13
+
+
+
+FDD - Gestion de Inventario
+
+9. API Gateway y Eureka
+9.1. API Gateway
+El API Gateway es la implementacion del patron Edge Service: el unico componente backend
+expuesto al exterior. Se construye sobre Spring Cloud Gateway y asume las siguientes
+responsabilidades:
+
+•  Enrutamiento dinamico. Las rutas a los microservicios se configuran por nombre logico (por
+ejemplo lb://ms-catalog). El Gateway resuelve la instancia consultando Eureka.
+
+•  Validacion de JWT. Comprueba firma y expiracion en cada peticion protegida.
+
+•  Autorizacion por ruta. Decide si el rol del usuario tiene permiso antes de reenviar la
+peticion.
+
+•  Inyeccion de cabeceras de identidad. Anade X-User-Email y X-User-Roles tras
+validar el token.
+
+•  CORS. Configurado para aceptar unicamente el origen del frontend.
+
+•  Punto unico de log. Registra todas las peticiones entrantes con el tiempo de respuesta y el
+codigo HTTP devuelto.
+
+9.2. Mapeo de rutas externas a microservicios
+Ruta externa Microservicio destino
+
+/api/auth/** ms-users
+
+/api/usuarios/** ms-users
+
+/api/productos/** ms-catalog
+
+/api/proveedores/** ms-suppliers
+
+/api/inventario/** ms-inventory
+
+/api/auditoria/** ms-audit
+
+9.3. Eureka Server
+Eureka actua como service registry. Cada microservicio se registra al arrancar mediante su
+spring.application.name y envia heartbeats periodicos para mantenerse activo. El Gateway
+lo consulta cada vez que necesita resolver un nombre logico (por ejemplo lb://ms-inventory)
+en una direccion IP y puerto interna de la red Docker.
+
+Esta indireccion permite que los microservicios cambien de IP, se reinicien o se ejecuten en
+multiples instancias sin que el Gateway tenga que conocer detalles de red. En este proyecto se
+usa una unica instancia por microservicio (alcance de DAM), pero la arquitectura soporta
+naturalmente el escalado horizontal.
+
+Gestion de Inventario - Microservicios Pagina 14
+
+
+
+FDD - Gestion de Inventario
+
+10. Modelo de datos
+Cada microservicio gestiona su propia base de datos MySQL. Las referencias entre microservicios
+son relaciones logicas, no claves foraneas fisicas. Los nombres de tabla y columna siguen una
+convencion snake_case.
+
+10.1. db_users (MS-Users)
+Tabla usuarios:
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+nombre VARCHAR(100) NOT NULL
+
+email VARCHAR(150) UNIQUE, NOT NULL
+
+password VARCHAR(60) NOT NULL (hash BCrypt)
+
+rol VARCHAR(20) NOT NULL, DEFAULT 'EMPLEADO', CHECK (rol IN
+('ADMIN','EMPLEADO'))
+
+confirmado BOOLEAN NOT NULL, DEFAULT FALSE
+
+token_confirmacion VARCHAR(36) NULL (UUID, unico mientras esta vigente)
+
+token_expira DATETIME NULL (caducidad del token de confirmacion)
+
+fecha_creacion DATETIME NOT NULL, DEFAULT CURRENT_TIMESTAMP
+
+10.2. db_catalog (MS-Catalog)
+Tabla productos:
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+nombre VARCHAR(150) NOT NULL
+
+sku VARCHAR(50) UNIQUE, NOT NULL
+
+precio_neto DECIMAL(10,2) NOT NULL, CHECK (precio_neto >= 0)
+
+activo BOOLEAN NOT NULL, DEFAULT TRUE
+
+10.3. db_suppliers (MS-Suppliers)
+Tabla proveedores:
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+nombre VARCHAR(150) NOT NULL
+
+email VARCHAR(150) UNIQUE, NOT NULL
+
+Gestion de Inventario - Microservicios Pagina 15
+
+
+
+FDD - Gestion de Inventario
+
+direccion VARCHAR(255) NULL
+
+10.4. db_inventory (MS-Inventory)
+Tabla stock:
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+producto_id BIGINT UNIQUE, NOT NULL (relacion logica con MS-Catalog)
+
+cantidad_disponible INT NOT NULL, DEFAULT 0, CHECK (cantidad_disponible >=
+0)
+
+Tabla movimientos:
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+producto_id BIGINT NOT NULL (relacion logica con MS-Catalog)
+
+proveedor_id BIGINT NULL (NULL en salidas; relacion logica con MS-Suppliers)
+
+usuario_email VARCHAR(150) NOT NULL (relacion logica con MS-Users)
+
+cantidad INT NOT NULL, CHECK (cantidad > 0)
+
+tipo VARCHAR(10) NOT NULL, CHECK (tipo IN ('ENTRADA','SALIDA'))
+
+fecha DATETIME NOT NULL, DEFAULT CURRENT_TIMESTAMP
+
+stock_resultante INT NOT NULL, CHECK (stock_resultante >= 0)
+
+10.5. db_audit (MS-Audit)
+Tabla logs (append-only, no se actualiza ni se borra):
+
+Columna Tipo Restricciones
+
+id BIGINT PK, AUTO_INCREMENT
+
+producto_id BIGINT NOT NULL (relacion logica)
+
+proveedor_id BIGINT NULL
+
+usuario_email VARCHAR(150) NOT NULL
+
+accion VARCHAR(10) NOT NULL, CHECK (accion IN ('ENTRADA','SALIDA'))
+
+cantidad INT NOT NULL, CHECK (cantidad > 0)
+
+fecha DATETIME NOT NULL
+
+stock_resultante INT NOT NULL
+
+Gestion de Inventario - Microservicios Pagina 16
+
+
+
+FDD - Gestion de Inventario
+
+11. Endpoints organizados por microservicio
+Todas las rutas son externas (vistas desde el frontend). Las rutas protegidas exigen la cabecera
+Authorization: Bearer <jwt>. Los microservicios internos reciben las cabeceras
+X-User-Email y X-User-Roles inyectadas por el Gateway.
+
+11.1. Autenticacion (MS-Users) - rutas /api/auth
+Metod Ruta Acceso Codigos HTTP
+o
+
+POST /api/auth/register Publico 201 Created, 400 Bad Request, 409
+Conflict (email ya registrado)
+
+GET /api/auth/confirmar?token=... Publico 302 Redirect a /confirmacion.html con
+resultado en query string
+
+POST /api/auth/login Publico 200 OK, 401 Unauthorized
+
+GET /api/auth/me Autenticado (cualquier 200 OK, 401 Unauthorized
+rol)
+
+11.2. Productos (MS-Catalog) - rutas /api/productos
+Metod Ruta Roles Codigos HTTP
+o
+
+GET /api/productos ADMIN, EMPLEADO 200 OK
+
+GET /api/productos/{id} ADMIN, EMPLEADO 200 OK, 404 Not Found
+
+POST /api/productos ADMIN 201 Created, 400 Bad Request, 409
+Conflict (SKU duplicado)
+
+PUT /api/productos/{id} ADMIN 200 OK, 400, 404
+
+DELET /api/productos/{id} ADMIN 204 No Content, 404 (borrado logico:
+E marca activo=false)
+
+11.3. Proveedores (MS-Suppliers) - rutas /api/proveedores
+Metod Ruta Roles Codigos HTTP
+o
+
+GET /api/proveedores ADMIN, EMPLEADO 200 OK
+
+GET /api/proveedores/{id} ADMIN, EMPLEADO 200 OK, 404
+
+POST /api/proveedores ADMIN 201 Created, 400, 409 (email duplicado)
+
+PUT /api/proveedores/{id} ADMIN 200 OK, 400, 404
+
+DELET /api/proveedores/{id} ADMIN 204 No Content, 404
+E
+
+Gestion de Inventario - Microservicios Pagina 17
+
+
+
+FDD - Gestion de Inventario
+
+11.4. Inventario (MS-Inventory) - rutas /api/inventario
+Metod Ruta Roles Codigos HTTP
+o
+
+POST /api/inventario/entrada ADMIN, EMPLEADO 201 Created, 400 Bad Request, 404
+(producto inexistente)
+
+POST /api/inventario/salida ADMIN, EMPLEADO 201 Created, 400, 404, 409 Conflict
+(stock insuficiente)
+
+GET /api/inventario/stock/{id} ADMIN, EMPLEADO 200 OK, 404
+
+GET /api/inventario/movimientos ADMIN, EMPLEADO 200 OK
+
+11.5. Auditoria (MS-Audit) - rutas /api/auditoria
+Metod Ruta Roles Codigos HTTP
+o
+
+GET /api/auditoria?desde=&hasta;=&page;=&size;= ADMIN 200 OK
+
+GET /api/auditoria/producto/{id}?desde=&hasta;= ADMIN 200 OK, 404
+
+GET /api/auditoria/usuario/{email}?desde=&hasta;= ADMIN 200 OK
+
+Gestion de Inventario - Microservicios Pagina 18
+
+
+
+FDD - Gestion de Inventario
+
+12. Flujos principales del sistema
+12.1. Registro de un nuevo usuario
+
+1.  El usuario rellena el formulario de registro (nombre, email, contrasena) en register.html.
+
+2.  El frontend hace POST /api/auth/register.
+
+3.  El Gateway identifica la ruta como publica y la reenvia a MS-Users.
+
+4.  MS-Users valida los datos, comprueba que no exista otro usuario con ese email, cifra la
+contrasena con BCrypt y guarda el usuario con confirmado=false, token_confirmacion
+(UUID) y token_expira = now() + 24h.
+
+5.  MS-Users publica un mensaje en cola.mails con el destinatario, el asunto y el cuerpo
+(incluyendo el enlace de confirmacion construido a partir de APP_PUBLIC_URL).
+
+6.  MS-Users devuelve 201 Created al frontend.
+
+7.  MS-Mail consume el mensaje y envia el correo via SMTP. Si el SMTP falla, RabbitMQ
+reintenta; tras varios fallos, el mensaje pasa a la DLQ.
+
+8.  El usuario recibe el correo y pulsa el enlace, que apunta a GET
+/api/auth/confirmar?token=....
+
+9.  MS-Users valida el token (existe, no esta caducado), marca el usuario como
+confirmado=true y borra el token. Despues redirige (302) a
+/confirmacion.html?status=ok.
+
+10.  Si el token es invalido o ha caducado, redirige a
+/confirmacion.html?status=error&reason=expired para que el frontend muestre un
+mensaje claro.
+
+12.2. Login y obtencion del JWT
+1.  El usuario introduce email y contrasena en index.html.
+
+2.  El frontend hace POST /api/auth/login con un JSON con email y password.
+
+3.  El Gateway reenvia la peticion a MS-Users (ruta publica).
+
+4.  MS-Users comprueba: que el usuario exista, que la contrasena coincida con el hash BCrypt
+almacenado y que la cuenta este confirmada. Si alguna de las tres validaciones falla, devuelve
+401 con mensaje generico.
+
+5.  Si todo es correcto, MS-Users genera un JWT firmado con HS256 (claims sub, roles, iat,
+exp) y lo devuelve en el body: { "accessToken": "...", "expiresIn": 3600 }.
+
+6.  El frontend almacena el token en sessionStorage. A partir de ese momento, todas las
+peticiones del frontend incluyen la cabecera Authorization: Bearer <jwt>.
+
+12.3. Registro de una entrada de stock
+1.  El usuario, autenticado, rellena el formulario en inventario.html (producto, proveedor,
+cantidad) y pulsa "Anadir Stock".
+
+2.  El frontend hace POST /api/inventario/entrada con el JWT en la cabecera
+Authorization.
+
+Gestion de Inventario - Microservicios Pagina 19
+
+
+
+FDD - Gestion de Inventario
+
+3.  El Gateway valida la firma y la expiracion del token localmente (sin consultar a MS-Users) y
+comprueba que el rol del usuario tenga acceso a esa ruta.
+
+4.  El Gateway elimina la cabecera Authorization e inyecta X-User-Email y X-User-Roles.
+Resuelve la direccion de MS-Inventory consultando Eureka y reenvia la peticion.
+
+5.  MS-Inventory valida los datos del body, lee X-User-Email, actualiza la fila
+correspondiente de stock e inserta una nueva fila en movimientos con tipo ENTRADA y el
+stock_resultante calculado.
+
+6.  MS-Inventory publica un mensaje en cola.auditoria con todos los datos del movimiento.
+
+7.  MS-Inventory responde 201 Created al frontend.
+
+8.  MS-Audit consume el mensaje y persiste una fila en logs. Si MS-Audit estuviera caido, los
+mensajes se acumulan en la cola y se procesan al reiniciar.
+
+12.4. Salida de stock con verificacion
+1.  Mismo inicio que el flujo de entrada hasta llegar a MS-Inventory.
+
+2.  MS-Inventory comprueba que cantidad_disponible >= cantidad solicitada. Si
+no, devuelve 409 Conflict con un mensaje explicativo.
+
+3.  Si hay stock suficiente, descuenta la cantidad, inserta el movimiento con tipo SALIDA y
+publica el evento de auditoria igual que en una entrada.
+
+4.  Devuelve 201 Created.
+
+12.5. Consulta de auditoria
+1.  Un usuario con rol ADMIN entra en historial.html.
+
+2.  El frontend hace GET
+/api/auditoria?desde=2025-09-01&hasta=2025-09-30&page=0&size=50.
+
+3.  El Gateway valida el JWT y comprueba que el rol sea ADMIN. Si fuera EMPLEADO,
+devolveria 403 Forbidden.
+
+4.  MS-Audit ejecuta la consulta sobre la tabla logs y devuelve la pagina solicitada.
+
+Gestion de Inventario - Microservicios Pagina 20
+
+
+
+FDD - Gestion de Inventario
+
+13. Trazabilidad, logs y auditoria
+13.1. Estrategia de auditoria
+La trazabilidad del sistema se concentra en MS-Audit, que mantiene un registro append-only de
+todos los movimientos de stock. La tabla logs nunca se actualiza ni se borra: cada evento queda
+como una linea inmutable. Esto permite reconstruir el historial completo de un producto, de un
+proveedor o de un usuario, incluso despues de que esos elementos hayan sido eliminados de sus
+respectivos servicios.
+
+13.2. Persistencia frente al borrado de entidades
+•  Cuando se da de baja un producto en MS-Catalog, se aplica un borrado logico
+(activo=false). El producto deja de aparecer en los listados, pero su id sigue siendo valido y
+los movimientos historicos siguen referenciandolo.
+
+•  Cuando se elimina un proveedor en MS-Suppliers, los movimientos pasados en los que
+aparece como proveedor mantienen su proveedor_id. La auditoria sigue siendo consultable.
+
+•  Si se elimina un usuario en el futuro (funcionalidad fuera del alcance actual), los logs
+conservan su usuario_email como string. Por ese motivo se almacena el email y no el id.
+
+13.3. Comportamiento ante caidas
+Las colas de RabbitMQ son durables y los mensajes son persistentes. Si MS-Audit esta caido
+cuando se produce un movimiento, MS-Inventory sigue respondiendo al usuario (porque la
+publicacion en RabbitMQ es asincrona respecto a la respuesta al frontend) y el mensaje queda en
+la cola. Cuando MS-Audit vuelve a estar disponible, los procesa en orden. Si un mensaje concreto
+falla repetidamente (por ejemplo por un formato invalido o un error en la BBDD), pasa a
+cola.auditoria.dlq tras varios reintentos y queda disponible para inspeccion manual desde
+la consola de RabbitMQ.
+
+13.4. Consulta de la auditoria
+Los endpoints de MS-Audit aceptan filtros opcionales por rango de fechas (desde, hasta en
+formato ISO-8601) y paginacion (page, size). Por defecto se devuelven los 50 registros mas
+recientes. El acceso esta restringido al rol ADMIN.
+
+Gestion de Inventario - Microservicios Pagina 21
+
+
+
+FDD - Gestion de Inventario
+
+14. Despliegue con Docker
+14.1. Composicion de contenedores
+
+Contenedor Imagen base Publica puerto al host
+
+frontend nginx:alpine Si (80)
+
+api-gateway Imagen Java del proyecto Si (8080)
+
+eureka-server Imagen Java del proyecto Solo en desarrollo (UI 8761)
+
+rabbitmq rabbitmq:management Solo UI 15672 en desarrollo
+
+ms-users Imagen Java del proyecto No
+
+ms-catalog Imagen Java del proyecto No
+
+ms-suppliers Imagen Java del proyecto No
+
+ms-inventory Imagen Java del proyecto No
+
+ms-audit Imagen Java del proyecto No
+
+ms-mail Imagen Java del proyecto No
+
+mysql mysql:8 No
+
+14.2. Healthchecks y orden de arranque
+Los servicios base (Eureka, RabbitMQ, MySQL) definen healthcheck en docker-compose. Los
+microservicios usan depends_on con condition: service_healthy para esperar a que sus
+dependencias esten listas antes de iniciar el registro en Eureka o la conexion a la BBDD. Esto
+evita los reinicios en bucle tipicos cuando los microservicios ganan la carrera al arranque.
+
+14.3. Variables de entorno y secretos
+Toda la configuracion sensible y especifica del entorno se externaliza a un fichero .env situado en
+la raiz del proyecto. El fichero esta incluido en .gitignore y no se sube al repositorio. El
+docker-compose.yml referencia las variables y las inyecta como variables de entorno en cada
+contenedor. Spring Boot las lee mediante interpolacion (${VAR}) en application.yml.
+
+Ejemplo de fichero .env:
+
+# Base de datos
+MYSQL_ROOT_PASSWORD=root_local_2025
+ 
+# RabbitMQ
+RABBITMQ_USER=admin
+RABBITMQ_PASS=admin_local
+ 
+# SMTP (cuenta de aplicacion de Gmail u otro proveedor)
+MAIL_USERNAME=miapp@gmail.com
+MAIL_PASSWORD=clave_de_aplicacion
+ 
+
+Gestion de Inventario - Microservicios Pagina 22
+
+
+
+FDD - Gestion de Inventario
+
+# Seguridad
+JWT_SECRET=cambia_este_secreto_por_uno_de_64_caracteres
+JWT_EXPIRATION_SECONDS=3600
+ 
+# URL publica del sistema (usada por MS-Mail para construir enlaces)
+APP_PUBLIC_URL=http://localhost:8080
+
+14.4. Red interna y exposicion de puertos
+Todos los contenedores comparten una red interna de Docker. Los microservicios internos se
+comunican por nombres de servicio (ms-users, ms-catalog, etc.) y no exponen puertos al host.
+Solo el frontend (nginx), el API Gateway y, opcionalmente en desarrollo, las consolas de Eureka y
+RabbitMQ son accesibles desde fuera del entorno Docker. Esto garantiza que cualquier peticion al
+backend pase obligatoriamente por el Gateway, donde se valida la autenticacion.
+
+Gestion de Inventario - Microservicios Pagina 23
+
+
+
+FDD - Gestion de Inventario
+
+15. Justificacion tecnica de las decisiones
+15.1. Por que microservicios
+El proyecto puede entenderse como un sistema modular en el que cada dominio (usuarios,
+catalogo, proveedores, inventario, auditoria, correo) tiene un ciclo de vida y una logica
+diferenciada. Disenarlo como microservicios permite delimitar responsabilidades, evolucionar
+partes del sistema independientemente y mostrar las herramientas tipicas del ecosistema Spring
+Cloud (Gateway, Eureka, RabbitMQ). Para un alcance real de produccion mas modesto, una
+arquitectura modular monolitica tambien seria viable; la decision de separar microservicios es
+consciente y se apoya en el valor formativo del patron.
+
+15.2. Por que JWT
+JWT permite que el API Gateway valide la autenticacion de cada peticion localmente (firma +
+expiracion) sin depender de una llamada sincrona a MS-Users en cada request. Esto desacopla
+los microservicios internos del servicio de usuarios, evita un cuello de botella obvio y permite que
+el cliente envie las credenciales al sistema una sola vez. Para un proyecto orientado a
+microservicios y a Gateway, JWT es el estandar de facto y es perfectamente abordable con la
+libreria jjwt.
+
+15.3. Por que un solo rol por usuario
+El sistema solo necesita dos roles fijos (ADMIN y EMPLEADO) y no esta previsto que un mismo
+usuario tenga simultaneamente varios. Crear una tabla roles y una relacion N:M
+usuarios_roles seria sobreingenieria: anadiria joins, complicaria el JWT y no aportaria valor
+real. Por eso el rol se modela como una columna en la tabla de usuarios.
+
+15.4. Por que borrado logico en MS-Catalog
+Si los productos se borraran fisicamente, los movimientos historicos que los referencian quedarian
+apuntando a un id inexistente y la auditoria perderia contexto. El borrado logico (campo activo)
+preserva la trazabilidad sin complicar la implementacion: las consultas de listado filtran por
+activo=true y la auditoria sigue funcionando.
+
+15.5. Por que RabbitMQ solo en dos flujos
+RabbitMQ aporta valor cuando el productor no necesita esperar al consumidor o cuando se quiere
+desacoplar la disponibilidad de los dos. Esto se cumple en la auditoria (no debe bloquear la
+respuesta al usuario) y en el envio de correos (operacion lenta y con alta tasa de fallos
+transitorios). En el resto del sistema, donde la respuesta tiene que llegar al usuario
+inmediatamente (consulta de stock, listado de productos, login), introducir colas seria peor:
+aumentaria la latencia y la complejidad sin aportar nada.
+
+15.6. Por que DLQ
+Sin Dead Letter Queue, un mensaje que fallara repetidamente al procesarse seria reentregado en
+bucle, saturando el broker y ocultando el problema. La DLQ permite que los mensajes
+definitivamente erroneos se aparten en una cola separada para inspeccion manual, sin afectar al
+resto del flujo. Su configuracion es minima (dos lineas por cola) y demuestra criterio operativo.
+
+Gestion de Inventario - Microservicios Pagina 24
+
+
+
+FDD - Gestion de Inventario
+
+15.7. Por que sin claves foraneas entre microservicios
+Cada microservicio tiene su propia base de datos. MySQL no soporta claves foraneas entre
+esquemas separados con la misma garantia que dentro de un esquema, y aunque pudiera,
+hacerlo destruiria la independencia de los microservicios. La integridad referencial se garantiza a
+nivel de aplicacion: validaciones, eventos de RabbitMQ y borrado logico. Es la decision estandar
+en arquitecturas de microservicios.
+
+15.8. Limites conscientes del alcance
+Se han descartado deliberadamente varias capacidades para mantener el proyecto dentro de lo
+abordable en DAM: refresh tokens, lista negra de JWT revocados, OAuth2/OIDC, multi-almacen,
+multi-tenant y despliegue en Kubernetes. Mencionar estas funcionalidades como mejoras futuras
+muestra criterio sin asumir un alcance que no se va a entregar.
+
+16. Conclusion
+El sistema descrito en este documento es una solucion de gestion de inventario completa y
+coherente para el alcance previsto. La separacion en microservicios responde a una division clara
+de dominios; el API Gateway centraliza la entrada y la autenticacion; Eureka aporta service
+discovery; RabbitMQ se utiliza unicamente donde el desacoplamiento aporta valor real; y el
+modelo de datos refleja una comprension correcta de las relaciones logicas frente a las fisicas.
+
+La autenticacion basada en JWT, junto con la propagacion de identidad mediante cabeceras
+inyectadas por el Gateway, permite mantener simples los microservicios internos y al mismo
+tiempo aplicar autorizacion granular por rol. La trazabilidad de los movimientos esta resuelta de
+forma asincrona y append-only, garantizando que el historial sobreviva al borrado de productos,
+proveedores o usuarios.
+
+El proyecto se entrega empaquetado con Docker Compose, con healthchecks, gestion de secretos
+por variables de entorno y exposicion controlada de puertos. El resultado es un sistema
+implementable, defendible tecnicamente y representativo de las practicas habituales en
+arquitecturas backend modernas, sin caer en sobreingenieria innecesaria para un Trabajo Fin de
+Ciclo de DAM.
+
+Gestion de Inventario - Microservicios Pagina 25

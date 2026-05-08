@@ -1,0 +1,21 @@
+# Credenciales locales — NUNCA subir
+.token
+.env
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+*.log
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
