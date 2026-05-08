@@ -4,6 +4,9 @@ REM  SCRIPT DE VINCULACIÓN GIT — Windows
 REM  Uso: doble clic o desde CMD: vincular_windows.bat
 REM ============================================================
 
+REM Cambiar al directorio raiz del proyecto
+cd /d "%~dp0.."
+
 set USUARIO=lucaslopag
 set REPO=GestionInventario
 set BRANCH=main

@@ -4,6 +4,9 @@
 #  Uso: bash bajar_linux.sh
 # ============================================================
 
+# Cambiar al directorio raíz del proyecto
+cd "$(dirname "$0")/.." || exit
+
 USUARIO="lucaslopag"
 REPO="GestionInventario"
 BRANCH="main"

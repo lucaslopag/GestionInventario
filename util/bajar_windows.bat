@@ -4,6 +4,9 @@ REM  BAJAR CAMBIOS DE GITHUB — Windows
 REM  Uso: doble clic o desde CMD: bajar_windows.bat
 REM ============================================================
 
+REM Cambiar al directorio raiz del proyecto
+cd /d "%~dp0.."
+
 set USUARIO=lucaslopag
 set REPO=GestionInventario
 set BRANCH=main
