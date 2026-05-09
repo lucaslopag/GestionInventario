@@ -111,6 +111,7 @@ public class ProductoService {
         dto.setNombre(producto.getNombre());
         dto.setSku(producto.getSku());
         dto.setPrecioNeto(producto.getPrecioNeto());
+        dto.setActivo(producto.isActivo());
         return dto;
     }
 

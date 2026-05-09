@@ -17,4 +17,5 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByNombreContainingAndActivoFalse(String nombre);
 
     Optional<Producto> findBySku(String sku);
+
 }

@@ -12,4 +12,5 @@ public class ProductoDTO {
     private String nombre;
     private Double precioNeto;
     private String sku;
+    private Boolean activo;
 }
