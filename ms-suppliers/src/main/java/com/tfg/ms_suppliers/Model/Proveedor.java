@@ -1,27 +1,30 @@
-package com.tfg.ms_catalog.Model;
+package com.tfg.ms_suppliers.Model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-public class Producto {
+@NoArgsConstructor
+@AllArgsConstructor
+public class Proveedor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false)
     private String nombre;
-    @Column(nullable = false, unique = true)
-    private String sku;
-    @Column(nullable = false)
-    private Double precioNeto;
-    @Column(nullable = false)
-    private boolean activo;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String direccion;
 }
