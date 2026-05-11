@@ -28,7 +28,7 @@ public class ProveedorService {
     }
 
     public ProveedorDTO update(Long id, Proveedor proveedor) {
-        Proveedor proveedorExistente = proveedorRepository.findById(id);
+        Proveedor proveedorExistente = proveedorRepository.findById(id).orElse(null);
         if (proveedorExistente == null) {
             return null;
         }
