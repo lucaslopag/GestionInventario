@@ -1,4 +1,4 @@
-# Credenciales locales — NUNCA subir
+# Credenciales locales -- NUNCA subir
 .token
 .env
 
@@ -8,13 +8,11 @@ target/
 *.jar
 *.war
 *.log
-.mvn/wrapper/maven-wrapper.jar
 
 # IDE
 .idea/
 *.iml
 .vscode/
-*.code-workspace
 
 # OS
 .DS_Store
