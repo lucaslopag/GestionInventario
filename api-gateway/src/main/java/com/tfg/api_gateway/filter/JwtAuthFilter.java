@@ -1,4 +1,4 @@
-package main.java.com.tfg.api_gateway.filter;
+package com.tfg.api_gateway.filter;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
