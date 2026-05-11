@@ -4,7 +4,6 @@ REM  BAJAR CAMBIOS DE GITHUB — Windows
 REM  Uso: doble clic o desde CMD: bajar_windows.bat
 REM ============================================================
 
-REM Cambiar al directorio raiz del proyecto
 cd /d "%~dp0.."
 
 set USUARIO=lucaslopag
@@ -12,10 +11,15 @@ set REPO=GestionInventario
 set BRANCH=main
 
 if not exist ".token" (
-    echo [ERROR] No se encontro .token en esta carpeta.
+    echo [ERROR] No se encontro el fichero .token en la raiz del proyecto.
+    echo         Crea el fichero .token con tu token de GitHub.
     pause & exit /b 1
 )
+
+REM Leer token y limpiar espacios/saltos de linea
 set /p TOKEN=<.token
+set "TOKEN=%TOKEN: =%"
+
 set REPO_URL=https://%USUARIO%:%TOKEN%@github.com/%USUARIO%/%REPO%.git
 
 echo.
@@ -35,10 +39,13 @@ if /i not "%CONFIRM%"=="y" (
     pause & exit /b 0
 )
 
+REM Actualizar remote con el token
 git remote set-url origin %REPO_URL% 2>nul || git remote add origin %REPO_URL%
 
-echo [->] Descargando cambios...
-git pull origin %BRANCH%
+REM Pull sin abrir editor (--no-edit evita que se abra vim)
+echo [-^>] Descargando cambios...
+set GIT_MERGE_AUTOEDIT=no
+git pull --no-edit origin %BRANCH% 2>&1
 
 if %errorlevel% equ 0 (
     echo.
@@ -48,9 +55,14 @@ if %errorlevel% equ 0 (
 ) else (
     echo.
     echo ======================================================
-    echo    ERROR - Puede haber conflictos locales.
-    echo    Tip: sube primero con subir_windows.bat
+    echo    ERROR - Hay conflictos locales sin resolver.
+    echo    Sube primero tus cambios con subir_windows.bat
+    echo    o resuelve los conflictos manualmente.
     echo ======================================================
 )
+
+REM Quitar el token de la URL del remote por seguridad
+git remote set-url origin https://github.com/%USUARIO%/%REPO%.git 2>nul
+
 echo.
 pause
