@@ -19,7 +19,7 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 | API Gateway    | 8080            | Ángel       |
 | Eureka Server  | 8761 (dev)      | Ángel       |
 | RabbitMQ       | 15672 (dev UI)  | Ángel       |
-| MS-Users       | interno         | Ángel       |
+| MS-Users       | interno         | Alejandro   |
 | MS-Catalog     | interno         | Lucas       |
 | MS-Suppliers   | interno         | Lucas       |
 | MS-Inventory   | interno         | Lucas       |
@@ -39,11 +39,11 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 ### 🟢 Ángel — Backend: Infraestructura y servicios de soporte
 - `eureka-server` (service registry)
 - `api-gateway` (Spring Cloud Gateway, filtro JWT, CORS, enrutamiento)
-- `ms-users` (registro, login, JWT, confirmación por email → publica en `cola.mails`)
 - `ms-audit` (consume `cola.auditoria`, consultas de historial)
 - `ms-mail` (consume `cola.mails`, envía por SMTP)
 
-### 🟡 Alejandro — Frontend + Infraestructura
+### 🟡 Alejandro — Frontend + Infraestructura + MS-Users
+- `ms-users` (registro, login, JWT, confirmación por email → publica en `cola.mails`)
 - Todas las páginas HTML/CSS/JS (login, registro, confirmación, productos, proveedores, inventario, auditoría)
 - Esquemas SQL de todas las BBDDs
 - `docker-compose.yml` completo con healthchecks y red interna
@@ -89,19 +89,12 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 ---
 
 #### 🟢 Ángel — Días 1-2
-> Objetivo: Eureka + Gateway funcionando, y `ms-users` con autenticación JWT completa.
+> Objetivo: Eureka + Gateway funcionando (Alejandro se encarga de `ms-users` con JWT).
 
 **Día 1:**
 - [ ] Crear proyecto `eureka-server`:
   - Solo `@EnableEurekaServer` y configurar `application.yml`
   - Verificar que arranca y la UI es visible en `localhost:8761`
-- [ ] Crear proyecto `ms-users`:
-  - Entidades: `Usuario` (id, nombre, email, password, rol, confirmado, token_confirmacion, token_expira, fecha_creacion)
-  - Endpoints públicos: `POST /auth/register`, `POST /auth/login`, `GET /auth/confirmar`
-  - Endpoint protegido: `GET /auth/me`
-  - Cifrado BCrypt de contraseñas
-  - Generación y firma de JWT (librería `jjwt`, HS256, claims: sub, roles, iat, exp=1h)
-  - Publicar en `cola.mails`: por ahora solo log en consola; RabbitMQ real el día 2
 
 **Día 2:**
 - [ ] Crear proyecto `api-gateway`:
@@ -109,21 +102,22 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - Rutas configuradas para todos los MS por nombre lógico (`lb://ms-catalog`, etc.)
   - **`JwtAuthFilter` (GlobalFilter):**
     - Rutas públicas: `/api/auth/register`, `/api/auth/login`, `/api/auth/confirmar`
-    - Validar firma JWT con el mismo secreto que `ms-users`
+    - Validar firma JWT con el mismo secreto que `ms-users` (secreto definido por Alejandro)
     - Validar expiración
     - Inyectar `X-User-Email` y `X-User-Roles` a los microservicios
     - Devolver 401/403 según corresponda
   - Configurar CORS
-- [ ] Registrar `ms-users` en Eureka (añadir cliente Eureka)
+- [ ] Registrar `eureka-server` y esperar que `ms-users` (Alejandro) se registre para probar el Gateway
 
-> 💡 El `JWT_SECRET` debe acordarse con Alejandro el día 1 para el `.env`. Sin esto no puede funcionar el Gateway.
+> 💡 Ángel necesita el `JWT_SECRET` que Alejandro define el día 1 para poder configurar el `JwtAuthFilter` del Gateway.
 
 ---
 
 #### 🟡 Alejandro — Días 1-2
-> Objetivo: infraestructura Docker lista y frontend con estructura completa aunque sin datos reales.
+> Objetivo: infraestructura Docker lista, `ms-users` con autenticación JWT completa, y frontend con estructura básica.
 
 **Día 1:**
+- [ ] Definir `JWT_SECRET` (64 caracteres mínimo) y añadirlo al `.env.example` — **comunicárselo a Ángel el día 1**
 - [ ] Crear scripts SQL de todas las BBDDs y subir al repo (`/db-scripts/`):
   - `db_users.sql`, `db_catalog.sql`, `db_suppliers.sql`, `db_inventory.sql`, `db_audit.sql`
 - [ ] Crear `docker-compose.yml` base:
@@ -132,6 +126,13 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - Variables de entorno desde `.env`
   - Healthchecks básicos para MySQL y RabbitMQ
 - [ ] Crear `.env.example` con todas las variables y subirlo al repo
+- [ ] Crear proyecto `ms-users`:
+  - Entidades: `Usuario` (id, nombre, email, password, rol, confirmado, token_confirmacion, token_expira, fecha_creacion)
+  - Endpoints públicos: `POST /auth/register`, `POST /auth/login`, `GET /auth/confirmar`
+  - Endpoint protegido: `GET /auth/me`
+  - Cifrado BCrypt de contraseñas
+  - Generación y firma de JWT (librería `jjwt`, HS256, claims: sub, roles, iat, exp=1h)
+  - Publicar en `cola.mails`: por ahora solo log en consola; RabbitMQ real el día 3
 
 **Día 2:**
 - [ ] Crear la estructura del frontend (`/frontend/`):
@@ -261,7 +262,7 @@ Alejandro (docker-compose) ──── todos arrancan juntos
 
 ## ⚠️ Reglas de equipo importantes
 
-1. **JWT_SECRET**: Ángel lo define el día 1 y Alejandro lo añade al `.env`. String de 64 caracteres mínimo. **Crítico: sin esto el Gateway no puede validar tokens.**
+1. **JWT_SECRET**: Alejandro lo define el día 1 (es el responsable de `ms-users`) y lo comunica a Ángel para el Gateway. String de 64 caracteres mínimo. **Crítico: sin esto el Gateway no puede validar tokens.**
 
 2. **Nombres de servicios en Eureka** (acordar día 1 y no cambiar):
    - `ms-users`, `ms-catalog`, `ms-suppliers`, `ms-inventory`, `ms-audit`
@@ -315,7 +316,7 @@ gestionInventario/
 │   └── api.js
 ├── eureka-server/                (Ángel)
 ├── api-gateway/                  (Ángel)
-├── ms-users/                     (Ángel)
+├── ms-users/                     (Alejandro)
 ├── ms-audit/                     (Ángel)
 ├── ms-mail/                      (Ángel)
 ├── ms-catalog/                   (Lucas)
@@ -329,7 +330,7 @@ gestionInventario/
 
 | Día | Lucas | Ángel | Alejandro |
 |-----|-------|-------|-----------|
-| 1 | ms-catalog + ms-suppliers | eureka-server + ms-users (JWT) | Scripts SQL + docker-compose base |
+| 1 | ms-catalog + ms-suppliers | eureka-server | Scripts SQL + docker-compose base + ms-users (JWT) |
 | 2 | ms-inventory (sin RabbitMQ aún) | api-gateway (JWT filter + rutas) | Estructura frontend (mocks) |
 | 3 | RabbitMQ en ms-inventory + Eureka en todos | ms-audit + ms-mail + RabbitMQ en ms-users | Docker completo + nginx |
 | 4 | Pruebas integración completa | Pruebas auth + auditoría | Conectar frontend a API real |
