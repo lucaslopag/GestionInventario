@@ -8,10 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import com.tfg.ms_users.DTO.EmailMessage;
-import com.tfg.ms_users.DTO.LoginRequest;
-import com.tfg.ms_users.DTO.LoginResponse;
-import com.tfg.ms_users.Security.JwtService;
+import com.tfg.ms_users.dto.EmailMessage;
+import com.tfg.ms_users.dto.LoginRequest;
+import com.tfg.ms_users.dto.LoginResponse;
+import com.tfg.ms_users.security.JwtService;
 import java.util.UUID;
 import java.time.LocalDateTime;
 

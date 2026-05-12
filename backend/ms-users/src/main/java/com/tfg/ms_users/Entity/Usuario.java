@@ -1,4 +1,4 @@
-package com.tfg.ms_users.Entity;
+package com.tfg.ms_users.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

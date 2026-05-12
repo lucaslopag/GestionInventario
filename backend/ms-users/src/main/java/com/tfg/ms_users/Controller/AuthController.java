@@ -1,9 +1,9 @@
 package com.tfg.ms_users.controller;
 
-import com.tfg.ms_users.DTO.LoginRequest;
-import com.tfg.ms_users.DTO.LoginResponse;
-import com.tfg.ms_users.DTO.RegisterRequest;
-import com.tfg.ms_users.Service.AuthService;
+import com.tfg.ms_users.dto.LoginRequest;
+import com.tfg.ms_users.dto.LoginResponse;
+import com.tfg.ms_users.dto.RegisterRequest;
+import com.tfg.ms_users.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +31,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<com.tfg.ms_users.Entity.Usuario> getMe(
+    public ResponseEntity<com.tfg.ms_users.entity.Usuario> getMe(
             @RequestHeader(value = "X-User-Email", required = false) String email) {
         
         if (email == null) {

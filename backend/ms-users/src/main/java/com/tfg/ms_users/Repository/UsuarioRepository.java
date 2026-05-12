@@ -1,6 +1,6 @@
-package com.tfg.ms_users.Repository;
+package com.tfg.ms_users.repository;
 
-import com.tfg.ms_users.Entity.Usuario;
+import com.tfg.ms_users.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
