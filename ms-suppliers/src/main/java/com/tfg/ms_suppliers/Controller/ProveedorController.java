@@ -1,8 +1,8 @@
 package com.tfg.ms_suppliers.Controller;
 
 import com.tfg.ms_suppliers.DTO.ProveedorDTO;
-import com.tfg.ms_suppliers.Model.Proveedor;
 import com.tfg.ms_suppliers.Service.ProveedorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,36 +25,30 @@ public class ProveedorController {
     @GetMapping("/{id}")
     public ResponseEntity<ProveedorDTO> getById(@PathVariable Long id) {
         ProveedorDTO proveedor = proveedorService.findById(id);
-        if (proveedor != null) {
-            return ResponseEntity.ok(proveedor);
-        } else {
+        if (proveedor == null) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(proveedor);
     }
 
     @PostMapping
-    public ResponseEntity<ProveedorDTO> create(@RequestBody Proveedor proveedor) {
-        ProveedorDTO nuevoProveedor = proveedorService.save(proveedor);
+    public ResponseEntity<ProveedorDTO> create(@Valid @RequestBody ProveedorDTO proveedorDTO) {
+        ProveedorDTO nuevoProveedor = proveedorService.save(proveedorDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProveedor);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @RequestBody Proveedor proveedor) {
-        ProveedorDTO proveedorActualizado = proveedorService.update(id, proveedor);
-        if (proveedorActualizado != null) {
-            return ResponseEntity.ok(proveedorActualizado);
-        } else {
+    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @Valid @RequestBody ProveedorDTO proveedorDTO) {
+        ProveedorDTO actualizado = proveedorService.update(id, proveedorDTO);
+        if (actualizado == null) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        ProveedorDTO proveedorBorrado = proveedorService.delete(id);
-        if (proveedorBorrado != null) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        proveedorService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
