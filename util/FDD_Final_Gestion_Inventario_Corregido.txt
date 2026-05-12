@@ -1,4 +1,4 @@
-﻿DOCUMENTO FUNCIONAL DE DISENO
+DOCUMENTO FUNCIONAL DE DISENO
 
 Sistema de Gestion
 de Inventario
@@ -9,7 +9,7 @@ Proyecto: Gestion de Inventario con Microservicios
 
 Tecnologias: Spring Boot, Spring Security, Spring Cloud Gateway,
 
-Eureka, JWT, RabbitMQ, Docker, MySQL
+Eureka, JWT, RabbitMQ, MySQL
 
 Tipo de documento: Documento Funcional de Diseno
 
@@ -59,7 +59,7 @@ Indice
 
 13.  Trazabilidad, logs y auditoria
 
-14.  Despliegue con Docker
+14.  Ejecucion en local
 
 15.  Justificacion tecnica de las decisiones
 
@@ -83,7 +83,7 @@ Spring Cloud Gateway como unico punto de entrada, Eureka como service registry y
 como broker de mensajeria para los procesos asincronos (auditoria y envio de correos). La
 autenticacion se resuelve con tokens JWT firmados, lo que permite que el Gateway valide cada
 peticion de forma local sin sobrecargar al servicio de usuarios. El sistema completo se despliega
-mediante Docker Compose, con cada microservicio en su propio contenedor y su propia base de
+mediante ejecucion local, con cada microservicio en su propio proceso y su propia base de
 datos MySQL.
 
 Este FDD recoge la arquitectura, las responsabilidades de cada microservicio, el modelo de datos,
@@ -119,8 +119,8 @@ de movimientos y enviar correos de confirmacion.
 •  Garantizar la trazabilidad de los movimientos de stock mediante un registro append-only en
 MS-Audit, independiente del ciclo de vida de productos y proveedores.
 
-•  Empaquetar y desplegar la totalidad del sistema con Docker Compose, documentando los
-healthchecks, las dependencias entre servicios y la gestion de secretos mediante variables de
+•  Ejecutar la totalidad del sistema en local, documentando los requisitos, las
+dependencias entre servicios y la gestion de secretos mediante variables de
 
 Gestion de Inventario - Microservicios Pagina 3
 
@@ -153,7 +153,7 @@ entorno.
 
 •  Envio de correos transaccionales (confirmacion de cuenta).
 
-•  Despliegue completo con Docker Compose en local.
+•  Ejecucion completa en local.
 
 3.2. Funcionalidades fuera del alcance
 Las siguientes capacidades son habituales en sistemas de produccion pero se han descartado
@@ -170,8 +170,7 @@ Ciclo:
 
 •  Reportes avanzados, exportacion a Excel, dashboards de business intelligence.
 
-•  Despliegue en Kubernetes o en la nube; el sistema se entrega para ejecucion local con
-Docker Compose.
+•  Despliegue en la nube; el sistema se entrega para ejecucion local.
 
 •  Almacenamiento de datos a gran escala (logs masivos, data lakes); MySQL es suficiente
 para el volumen previsto.
@@ -185,7 +184,7 @@ FDD - Gestion de Inventario
 4. Arquitectura general del sistema
 El sistema se compone de un frontend estatico y un conjunto de microservicios backend. Todas
 las peticiones del frontend pasan por el API Gateway, que es el unico componente backend
-expuesto al host. Los microservicios internos se comunican entre si por la red interna de Docker,
+expuesto al host. Los microservicios internos se comunican entre si por la red local,
 ya sea de forma sincrona (HTTP) o asincrona (RabbitMQ).
 
 4.1. Componentes principales
@@ -281,7 +280,7 @@ FDD - Gestion de Inventario
                             (RabbitMQ)
 
 Solo el Frontend, el API Gateway y, opcionalmente en desarrollo, las consolas de Eureka y RabbitMQ
-publican puerto al host. El resto de microservicios solo existen en la red interna de Docker.
+publican puerto al host. El resto de microservicios solo existen en la red local.
 
 Gestion de Inventario - Microservicios Pagina 6
 
@@ -542,8 +541,8 @@ cabeceras internas:
 
 •  X-User-Roles: lista de roles del usuario, extraida del claim roles.
 
-Los microservicios internos confian en estas cabeceras porque la red interna de Docker solo
-expone los microservicios al Gateway: ningun otro componente puede inyectarlas legitimamente.
+Los microservicios internos confian en estas cabeceras porque el acceso esta
+restringido a traves del Gateway.
 MS-Inventory, por ejemplo, lee X-User-Email para registrar quien ha realizado un movimiento.
 
 7.3. Comunicacion asincrona
@@ -679,7 +678,7 @@ Ruta externa Microservicio destino
 Eureka actua como service registry. Cada microservicio se registra al arrancar mediante su
 spring.application.name y envia heartbeats periodicos para mantenerse activo. El Gateway
 lo consulta cada vez que necesita resolver un nombre logico (por ejemplo lb://ms-inventory)
-en una direccion IP y puerto interna de la red Docker.
+en una direccion IP y puerto interna.
 
 Esta indireccion permite que los microservicios cambien de IP, se reinicien o se ejecuten en
 multiples instancias sin que el Gateway tenga que conocer detalles de red. En este proyecto se
@@ -1047,44 +1046,40 @@ Gestion de Inventario - Microservicios Pagina 21
 
 FDD - Gestion de Inventario
 
-14. Despliegue con Docker
-14.1. Composicion de contenedores
+14. Ejecucion en local
+14.1. Servicios y puertos
 
-Contenedor Imagen base Publica puerto al host
+Servicio Puerto Proposito
 
-frontend nginx:alpine Si (80)
+frontend 80 Interfaz de usuario (servida por nginx o similar)
 
-api-gateway Imagen Java del proyecto Si (8080)
+api-gateway 8080 Unico punto de entrada al backend
 
-eureka-server Imagen Java del proyecto Solo en desarrollo (UI 8761)
+eureka-server 8761 Registro de servicios
 
-rabbitmq rabbitmq:management Solo UI 15672 en desarrollo
+rabbitmq 5672 Broker de mensajeria (UI 15672)
 
-ms-users Imagen Java del proyecto No
+ms-users 8081 Gestion de usuarios
 
-ms-catalog Imagen Java del proyecto No
+ms-catalog 8082 CRUD de productos
 
-ms-suppliers Imagen Java del proyecto No
+ms-suppliers 8083 CRUD de proveedores
 
-ms-inventory Imagen Java del proyecto No
+ms-inventory 8084 Gestion de stock
 
-ms-audit Imagen Java del proyecto No
+ms-audit 8085 Auditoria
 
-ms-mail Imagen Java del proyecto No
+ms-mail 8086 Envio de correos
 
-mysql mysql:8 No
+mysql 3306 Base de datos
 
-14.2. Healthchecks y orden de arranque
-Los servicios base (Eureka, RabbitMQ, MySQL) definen healthcheck en docker-compose. Los
-microservicios usan depends_on con condition: service_healthy para esperar a que sus
-dependencias esten listas antes de iniciar el registro en Eureka o la conexion a la BBDD. Esto
-evita los reinicios en bucle tipicos cuando los microservicios ganan la carrera al arranque.
+14.2. Orden de arranque recomendado
+1. Iniciar los servicios base: MySQL, RabbitMQ y Eureka Server.
+2. Una vez que Eureka este listo, iniciar el API Gateway.
+3. Iniciar el resto de microservicios. Cada microservicio se registrara automaticamente en Eureka y conectara a la base de datos correspondiente.
 
 14.3. Variables de entorno y secretos
-Toda la configuracion sensible y especifica del entorno se externaliza a un fichero .env situado en
-la raiz del proyecto. El fichero esta incluido en .gitignore y no se sube al repositorio. El
-docker-compose.yml referencia las variables y las inyecta como variables de entorno en cada
-contenedor. Spring Boot las lee mediante interpolacion (${VAR}) en application.yml.
+Toda la configuracion sensible y especifica del entorno se externaliza a un fichero .env situado en la raiz del proyecto o se configura mediante variables de entorno del sistema. Spring Boot las lee mediante interpolacion (${VAR}) en application.yml.
 
 Ejemplo de fichero .env:
 
@@ -1113,12 +1108,8 @@ JWT_EXPIRATION_SECONDS=3600
 # URL publica del sistema (usada por MS-Mail para construir enlaces)
 APP_PUBLIC_URL=http://localhost:8080
 
-14.4. Red interna y exposicion de puertos
-Todos los contenedores comparten una red interna de Docker. Los microservicios internos se
-comunican por nombres de servicio (ms-users, ms-catalog, etc.) y no exponen puertos al host.
-Solo el frontend (nginx), el API Gateway y, opcionalmente en desarrollo, las consolas de Eureka y
-RabbitMQ son accesibles desde fuera del entorno Docker. Esto garantiza que cualquier peticion al
-backend pase obligatoriamente por el Gateway, donde se valida la autenticacion.
+14.4. Comunicacion local
+Todos los servicios se comunican a traves de la red local. Los microservicios internos se comunican por nombres de servicio resueltos por Eureka y no necesitan exponer sus puertos directamente al exterior. Solo el frontend, el API Gateway y las consolas de gestion son accesibles desde fuera. Esto garantiza que cualquier peticion al backend pase obligatoriamente por el Gateway, donde se valida la autenticacion.
 
 Gestion de Inventario - Microservicios Pagina 23
 
@@ -1202,10 +1193,6 @@ tiempo aplicar autorizacion granular por rol. La trazabilidad de los movimientos
 forma asincrona y append-only, garantizando que el historial sobreviva al borrado de productos,
 proveedores o usuarios.
 
-El proyecto se entrega empaquetado con Docker Compose, con healthchecks, gestion de secretos
-por variables de entorno y exposicion controlada de puertos. El resultado es un sistema
-implementable, defendible tecnicamente y representativo de las practicas habituales en
-arquitecturas backend modernas, sin caer en sobreingenieria innecesaria para un Trabajo Fin de
-Ciclo de DAM.
+El proyecto se entrega configurado para ejecucion local, con gestion de secretos por variables de entorno y exposicion controlada de servicios. El resultado es un sistema implementable, defendible tecnicamente y representativo de las practicas habituales en arquitecturas backend modernas.
 
 Gestion de Inventario - Microservicios Pagina 25

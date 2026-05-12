@@ -2,7 +2,7 @@
 
 > **Equipo:** Lucas · Ángel · Alejandro  
 > **Duración:** 7 días  
-> **Stack:** Spring Boot · Spring Cloud Gateway · Eureka · JWT · RabbitMQ · MySQL · Docker · HTML/CSS/JS (nginx)
+> **Stack:** Spring Boot · Spring Cloud Gateway · Eureka · JWT · RabbitMQ · MySQL · HTML/CSS/JS (nginx)
 
 ---
 
@@ -46,7 +46,6 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 - `ms-users` (registro, login, JWT, confirmación por email → publica en `cola.mails`)
 - Todas las páginas HTML/CSS/JS (login, registro, confirmación, productos, proveedores, inventario, auditoría)
 - Esquemas SQL de todas las BBDDs
-- `docker-compose.yml` completo con healthchecks y red interna
 - Fichero `.env` de ejemplo
 - Configuración nginx
 
@@ -114,18 +113,12 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 ---
 
 #### 🟡 Alejandro — Días 1-2
-> Objetivo: infraestructura Docker lista, `ms-users` con autenticación JWT completa, y frontend con estructura básica.
+> Objetivo: infraestructura local lista, `ms-users` con autenticación JWT completa, y frontend con estructura básica.
 
 **Día 1:**
 - [ ] Definir `JWT_SECRET` (64 caracteres mínimo) y añadirlo al `.env.example` — **comunicárselo a Ángel el día 1**
 - [ ] Crear scripts SQL de todas las BBDDs y subir al repo (`/db-scripts/`):
   - `db_users.sql`, `db_catalog.sql`, `db_suppliers.sql`, `db_inventory.sql`, `db_audit.sql`
-- [ ] Crear `docker-compose.yml` base:
-  - Contenedor MySQL + RabbitMQ
-  - Red interna Docker
-  - Variables de entorno desde `.env`
-  - Healthchecks básicos para MySQL y RabbitMQ
-- [ ] Crear `.env.example` con todas las variables y subirlo al repo
 - [ ] Crear proyecto `ms-users`:
   - Entidades: `Usuario` (id, nombre, email, password, rol, confirmado, token_confirmacion, token_expira, fecha_creacion)
   - Endpoints públicos: `POST /auth/register`, `POST /auth/login`, `GET /auth/confirmar`
@@ -174,10 +167,8 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - DLQ `cola.mails.dlq` tras fallos
 
 #### 🟡 Alejandro — Día 3
-- [ ] Añadir al `docker-compose.yml` todos los microservicios con sus imágenes
-- [ ] Configurar `depends_on` con `condition: service_healthy`
-- [ ] Añadir contenedor `frontend` (nginx)
-- [ ] Añadir `nginx.conf`
+- [ ] Configurar `.env` con todas las variables necesarias
+- [ ] Configurar `nginx.conf`
 
 ---
 
@@ -210,7 +201,7 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 
 ---
 
-### ⚡ Días 6-7 — Pulido, pruebas y Docker final
+### ⚡ Días 6-7 — Pulido y pruebas finales
 
 #### 🔵 Lucas — Días 6-7
 - [ ] Manejo correcto de errores: 404, 409 (stock insuficiente), 400
@@ -222,12 +213,9 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 - [ ] Verificar que EMPLEADO recibe 403 en `/api/auditoria`
 - [ ] Verificar 401 con token inválido/caducado
 - [ ] Revisar que mensajes fallidos van a DLQ
-- [ ] Añadir Dockerfile a cada microservicio
 
 #### 🟡 Alejandro — Días 6-7
-- [ ] Pulir CSS/UX (mensajes de error, loading states)
-- [ ] Ocultar elementos según rol (EMPLEADO no ve borrar ni historial)
-- [ ] Verificar `docker-compose up --build` desde cero
+- [ ] Verificar ejecución completa desde cero
 - [ ] Crear `README.md`: cómo arrancar, qué hace cada servicio
 
 ---
@@ -245,15 +233,13 @@ ms-inventory ──[cola.auditoria]────── ms-audit [consume]
 api-gateway ──[lb://ms-*]──────────── Eureka [resuelve IPs]
                                           ▲
                                todos los MS se registran aquí
-
-Alejandro (docker-compose) ──── todos arrancan juntos
 ```
 
 ### Tabla: ¿qué necesito de quién?
 
 | Para que funcione... | Necesito de... |
 |---|---|
-| Lucas pruebe sus MS | Alejandro levante MySQL (`docker-compose up mysql`) |
+| Lucas pruebe sus MS | Alejandro levante MySQL local |
 | Ángel pruebe el Gateway | Al menos un MS de Lucas registrado en Eureka |
 | Alejandro conecte el frontend | Gateway de Ángel devolviendo JWT |
 | ms-audit funcione | Lucas tenga ms-inventory publicando en RabbitMQ (día 3) |
@@ -285,7 +271,7 @@ Alejandro (docker-compose) ──── todos arrancan juntos
    }
    ```
 
-6. **Para pruebas locales sin Docker**: usar MySQL en local con los scripts de Alejandro y conexión `localhost:3306`.
+6. **Para pruebas locales**: usar MySQL en local con los scripts de Alejandro y conexión `localhost:3306`.
 
 ---
 
@@ -294,7 +280,6 @@ Alejandro (docker-compose) ──── todos arrancan juntos
 ```
 gestionInventario/
 ├── .env.example                  (Alejandro)
-├── docker-compose.yml            (Alejandro)
 ├── README.md                     (todos)
 ├── db-scripts/                   (Alejandro)
 │   ├── db_users.sql
@@ -304,7 +289,6 @@ gestionInventario/
 │   └── db_audit.sql
 ├── frontend/                     (Alejandro)
 │   ├── nginx.conf
-│   ├── Dockerfile
 │   ├── index.html
 │   ├── register.html
 │   ├── confirmacion.html
@@ -331,13 +315,13 @@ gestionInventario/
 
 | Día | Lucas | Ángel | Alejandro |
 |-----|-------|-------|-----------|
-| 1 | ms-catalog + ms-suppliers | eureka-server | Scripts SQL + docker-compose base + ms-users (JWT) |
+| 1 | ms-catalog + ms-suppliers | eureka-server | Scripts SQL + ms-users (JWT) |
 | 2 | ms-inventory (sin RabbitMQ aún) | api-gateway (JWT filter + rutas) | Estructura frontend (mocks) |
-| 3 | RabbitMQ en ms-inventory + Eureka en todos | ms-audit + ms-mail + RabbitMQ en ms-users | Docker completo + nginx |
+| 3 | RabbitMQ en ms-inventory + Eureka en todos | ms-audit + ms-mail + RabbitMQ en ms-users | Configuración local + nginx |
 | 4 | Pruebas integración completa | Pruebas auth + auditoría | Conectar frontend a API real |
 | 5 | Corrección de bugs | Corrección de bugs | Conectar frontend a API real |
 | 6 | Errores + validaciones | Pruebas seguridad (roles, 401/403) | CSS/UX + roles en frontend |
-| 7 | Revisión final | Revisión final + Dockerfiles | README + docker-compose up --build |
+| 7 | Revisión final | Revisión final | README |
 
 ---
 
