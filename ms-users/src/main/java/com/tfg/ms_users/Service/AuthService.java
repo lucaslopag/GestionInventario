@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import com.tfg.ms_users.DTO.EmailMessage;
+import com.tfg.ms_users.DTO.LoginRequest;
+import com.tfg.ms_users.DTO.LoginResponse;
+import com.tfg.ms_users.Security.JwtService;
 import java.util.UUID;
 import java.time.LocalDateTime;
 
@@ -19,6 +22,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final RabbitTemplate rabbitTemplate;
+    private final JwtService jwtService;
 
     @Value("${spring.rabbitmq.queues.mail}")
     private String mailQueue;
@@ -86,5 +90,36 @@ public class AuthService {
         usuarioRepository.save(usuario);
 
         return "Cuenta confirmada con éxito. Ya puedes iniciar sesión.";
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        // 1. Buscar usuario por email
+        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Credenciales incorrectas"));
+
+        // 2. Verificar contraseña
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+            throw new RuntimeException("Credenciales incorrectas");
+        }
+
+        // 3. Verificar si está confirmado
+        if (!usuario.isConfirmado()) {
+            throw new RuntimeException("Debes confirmar tu cuenta antes de iniciar sesión");
+        }
+
+        // 4. Generar Token JWT
+        String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol());
+
+        return LoginResponse.builder()
+                .token(token)
+                .email(usuario.getEmail())
+                .nombre(usuario.getNombre())
+                .rol(usuario.getRol())
+                .build();
+    }
+
+    public Usuario getMe(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 }
