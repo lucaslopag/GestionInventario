@@ -17,4 +17,9 @@ public class AuthController {
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.registrar(request));
     }
+
+    @GetMapping("/confirmar")
+    public ResponseEntity<String> confirmar(@RequestParam String token) {
+        return ResponseEntity.ok(authService.confirmar(token));
+    }
 }

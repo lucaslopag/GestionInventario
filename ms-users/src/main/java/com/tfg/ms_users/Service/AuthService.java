@@ -67,4 +67,24 @@ public class AuthService {
         rabbitTemplate.convertAndSend(mailQueue, email);
         System.out.println("Mensaje de email enviado a la cola para: " + usuario.getEmail());
     }
+
+    public String confirmar(String token) {
+        // 1. Buscar el usuario por el token
+        Usuario usuario = usuarioRepository.findByTokenConfirmacion(token)
+                .orElseThrow(() -> new RuntimeException("Token de confirmación no válido"));
+
+        // 2. Verificar si el token ha expirado
+        if (usuario.getTokenExpira().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("El enlace de confirmación ha expirado");
+        }
+
+        // 3. Confirmar la cuenta y limpiar el token
+        usuario.setConfirmado(true);
+        usuario.setTokenConfirmacion(null);
+        usuario.setTokenExpira(null);
+
+        usuarioRepository.save(usuario);
+
+        return "Cuenta confirmada con éxito. Ya puedes iniciar sesión.";
+    }
 }
