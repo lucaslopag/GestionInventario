@@ -1,49 +1,49 @@
 # ======================================================================
-# SCRIPT PARA ARRANCAR TODOS LOS MICROSERVICIOS (POWERSHELL)
+# SCRIPT PARA ARRANCAR TODOS LOS MICROSERVICIOS (POWERSHELL - ORDENADO)
 # ======================================================================
 
-$services = @(
-    @{ name = "EUREKA-SERVER"; path = "eureka-server"; wait = 15 },
-    @{ name = "MS-USERS";      path = "ms-users";      wait = 2 },
-    @{ name = "MS-CATALOG";    path = "ms-catalog";    wait = 2 },
-    @{ name = "MS-SUPPLIERS";  path = "ms-suppliers";  wait = 2 },
-    @{ name = "MS-INVENTORY";  path = "ms-inventory";  wait = 2 },
-    @{ name = "MS-AUDIT";      path = "ms-audit";      wait = 2 },
-    @{ name = "MS-MAIL";       path = "ms-mail";       wait = 2 },
-    @{ name = "API-GATEWAY";   path = "api-gateway";   wait = 0 }
-)
-
 $backendRoot = Join-Path $PSScriptRoot "..\backend"
+$frontendRoot = Join-Path $PSScriptRoot "..\frontend-react"
 
-Write-Host "`n [!] Iniciando despliegue local de microservicios...`n" -ForegroundColor Cyan
+Write-Host "`n [!] Iniciando despliegue local (Orden de Integracion)...`n" -ForegroundColor Cyan
 
-# --- 0. INFRAESTRUCTURA (MySQL y RabbitMQ locales) ---
-Write-Host " [0] Intentando iniciar servicios de infraestructura..." -ForegroundColor Gray
-try {
-    Start-Service -Name "MySQL" -ErrorAction SilentlyContinue
-    Start-Service -Name "RabbitMQ" -ErrorAction SilentlyContinue
-} catch {
-    Write-Host " [!] No se pudieron iniciar los servicios automáticamente. Asegúrate de que MySQL y RabbitMQ estén corriendo." -ForegroundColor DarkYellow
-}
-Write-Host ""
+# 1. Eureka
+Write-Host " [1/8] Lanzando EUREKA-SERVER..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\eureka-server'; ./mvnw spring-boot:run"
+Start-Sleep -Seconds 15
 
-foreach ($service in $services) {
-    Write-Host " [+] Lanzando $($service.name)..." -ForegroundColor Yellow
-    
-    $targetDir = Join-Path $backendRoot $service.path
-    
-    # Abrir en una nueva ventana de PowerShell
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$targetDir'; Write-Host 'Iniciando $($service.name)...' -ForegroundColor Cyan; ./mvnw spring-boot:run"
-    
-    if ($service.wait -gt 0) {
-        Write-Host " [?] Esperando $($service.wait) segundos..." -ForegroundColor Gray
-        Start-Sleep -Seconds $service.wait
-    }
-}
+# 2 & 3. Infra
+Write-Host " [2/8] Iniciando RABBITMQ..." -ForegroundColor Gray
+Start-Service -Name "RabbitMQ" -ErrorAction SilentlyContinue
+Write-Host " [3/8] Iniciando MYSQL..." -ForegroundColor Gray
+Start-Service -Name "MySQL" -ErrorAction SilentlyContinue
+
+# 4. Users
+Write-Host " [4/8] Lanzando MS-USERS..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-users'; ./mvnw spring-boot:run"
+Start-Sleep -Seconds 5
+
+# 5. Gateway
+Write-Host " [5/8] Lanzando API-GATEWAY..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\api-gateway'; ./mvnw spring-boot:run"
+Start-Sleep -Seconds 5
+
+# 6. Dominio
+Write-Host " [6/8] Lanzando MS-CATALOG, MS-SUPPLIERS y MS-INVENTORY..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-catalog'; ./mvnw spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-suppliers'; ./mvnw spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-inventory'; ./mvnw spring-boot:run"
+Start-Sleep -Seconds 5
+
+# 7. Soporte
+Write-Host " [7/8] Lanzando MS-AUDIT y MS-MAIL..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-audit'; ./mvnw spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\ms-mail'; ./mvnw spring-boot:run"
+
+# 8. Frontend
+Write-Host " [8/8] Lanzando FRONTEND-REACT..." -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendRoot'; npm run dev"
 
 Write-Host "`n ======================================================================" -ForegroundColor Green
-Write-Host "  TODOS LOS SERVICIOS HAN SIDO LANZADOS." -ForegroundColor Green
+Write-Host "  SISTEMA LANZADO COMPLETAMENTE." -ForegroundColor Green
 Write-Host " ======================================================================`n" -ForegroundColor Green
-Write-Host " NOTAS:"
-Write-Host " 1. MySQL y RabbitMQ deben estar instalados localmente (sin Docker)."
-Write-Host " 2. Revisa las consolas individuales para ver logs de error.`n"

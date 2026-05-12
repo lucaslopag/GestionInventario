@@ -1,4 +1,4 @@
-package com.tfg.ms_users.DTO;
+package com.tfg.ms_users.dto;
 
 import lombok.*;
 

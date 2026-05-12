@@ -1,4 +1,4 @@
-package com.tfg.ms_users.Security;
+package com.tfg.ms_users.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
