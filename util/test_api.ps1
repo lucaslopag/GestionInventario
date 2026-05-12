@@ -96,7 +96,7 @@ function Invoke-ApiRequest {
     }
 
     try {
-        $Response = Invoke-RestMethod @Params -ResponseHeadersVariable ResHeaders -ErrorAction Stop
+        $Response = Invoke-RestMethod @Params -ErrorAction Stop
         Write-Host "[OK] $Method $Path - Success" -ForegroundColor Green
         return $Response
     }

@@ -1,4 +1,4 @@
-package com.tfg.ms_users.Config;
+package com.tfg.ms_users.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +20,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Deshabilitamos CSRF para microservicios
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll() // Permitimos todo lo que cuelgue de /auth/
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             );
         return http.build();
     }

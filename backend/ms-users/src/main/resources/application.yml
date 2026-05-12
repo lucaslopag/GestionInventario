@@ -7,8 +7,8 @@ spring:
   
   datasource:
     url: jdbc:mysql://localhost:3306/db_users?createDatabaseIfNotExist=true&serverTimezone=UTC
-    username: ${MYSQL_USER:appuser}
-    password: ${MYSQL_PASSWORD:apppassword}
+    username: ${MYSQL_USER:tfg}
+    password: ${MYSQL_PASSWORD:tfg1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:
@@ -22,8 +22,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: ${RABBITMQ_USER:rabbit}
-    password: ${RABBITMQ_PASSWORD:rabbitpassword}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
     template:
       exchange: ""
       routing-key: ${RABBITMQ_QUEUE_MAIL:cola.mails}
@@ -39,5 +39,5 @@ eureka:
 
 # Configuración personalizada para JWT (usará el .env)
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:e5355151e2589d2b316e10af29ba6463e6fbcc836cd626cad9715541109ad707fdbfce4f0176a19235956075714b9c0937e882ce08c8885584d42705c0ebaab7}
   expiration: ${JWT_EXPIRATION_MS:3600000}
