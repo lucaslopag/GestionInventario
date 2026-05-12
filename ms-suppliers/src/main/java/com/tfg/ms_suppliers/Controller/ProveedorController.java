@@ -1,0 +1,54 @@
+package com.tfg.ms_suppliers.Controller;
+
+import com.tfg.ms_suppliers.DTO.ProveedorDTO;
+import com.tfg.ms_suppliers.Service.ProveedorService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/proveedores")
+public class ProveedorController {
+
+    @Autowired
+    private ProveedorService proveedorService;
+
+    @GetMapping
+    public ResponseEntity<List<ProveedorDTO>> getAll() {
+        return ResponseEntity.ok(proveedorService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProveedorDTO> getById(@PathVariable Long id) {
+        ProveedorDTO proveedor = proveedorService.findById(id);
+        if (proveedor == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(proveedor);
+    }
+
+    @PostMapping
+    public ResponseEntity<ProveedorDTO> create(@Valid @RequestBody ProveedorDTO proveedorDTO) {
+        ProveedorDTO nuevoProveedor = proveedorService.save(proveedorDTO);
+        return new ResponseEntity<>(nuevoProveedor, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @Valid @RequestBody ProveedorDTO proveedorDTO) {
+        ProveedorDTO actualizado = proveedorService.update(id, proveedorDTO);
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(actualizado);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        proveedorService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

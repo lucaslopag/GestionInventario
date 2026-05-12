@@ -22,28 +22,53 @@ public class ProveedorService {
         return proveedorRepository.findById(id).map(this::mapToDTO).orElse(null);
     }
 
-    public ProveedorDTO save(Proveedor proveedor) {
+    public ProveedorDTO save(ProveedorDTO proveedorDTO) {
+        if (proveedorRepository.existsByEmail(proveedorDTO.getEmail())) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+        Proveedor proveedor = mapToEntity(proveedorDTO);
         Proveedor proveedorGuardado = proveedorRepository.save(proveedor);
         return mapToDTO(proveedorGuardado);
     }
 
-    public ProveedorDTO update(Long id, Proveedor proveedor) {
-        Proveedor proveedorExistente = proveedorRepository.findById(id);
+    public ProveedorDTO update(Long id, ProveedorDTO proveedorDTO) {
+        Proveedor proveedorExistente = proveedorRepository.findById(id).orElse(null);
         if (proveedorExistente == null) {
             return null;
         }
-        proveedorExistente.setNombre(proveedor.getNombre());
-        proveedorExistente.setDireccion(proveedor.getDireccion());
-        proveedorExistente.setEmail(proveedor.getEmail());
+        
+        // Verificar si el email cambia y si el nuevo ya existe
+        if (!proveedorExistente.getEmail().equals(proveedorDTO.getEmail()) && 
+            proveedorRepository.existsByEmail(proveedorDTO.getEmail())) {
+            throw new RuntimeException("El nuevo email ya está registrado por otro proveedor");
+        }
+
+        proveedorExistente.setNombre(proveedorDTO.getNombre());
+        proveedorExistente.setDireccion(proveedorDTO.getDireccion());
+        proveedorExistente.setEmail(proveedorDTO.getEmail());
+        
         return mapToDTO(proveedorRepository.save(proveedorExistente));
+    }
+
+    public void delete(Long id) {
+        proveedorRepository.deleteById(id);
     }
 
     public ProveedorDTO mapToDTO(Proveedor proveedor) {
         ProveedorDTO proveedorDTO = new ProveedorDTO();
+        proveedorDTO.setId(proveedor.getId());
         proveedorDTO.setNombre(proveedor.getNombre());
         proveedorDTO.setDireccion(proveedor.getDireccion());
         proveedorDTO.setEmail(proveedor.getEmail());
         return proveedorDTO;
     }
 
+    private Proveedor mapToEntity(ProveedorDTO dto) {
+        Proveedor entity = new Proveedor();
+        entity.setNombre(dto.getNombre());
+        entity.setEmail(dto.getEmail());
+        entity.setDireccion(dto.getDireccion());
+        return entity;
+    }
 }
+
