@@ -1,4 +1,4 @@
-package com.tfg.ms_users.config;
+package com.tfg.ms_users.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

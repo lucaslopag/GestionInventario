@@ -1,4 +1,4 @@
-package com.tfg.ms_users.controller;
+package com.tfg.ms_users.Controller;
 
 import com.tfg.ms_users.DTO.LoginRequest;
 import com.tfg.ms_users.DTO.LoginResponse;
