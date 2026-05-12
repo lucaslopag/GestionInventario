@@ -1,7 +1,6 @@
 package com.tfg.ms_inventory.Service;
 
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 import com.tfg.ms_inventory.DTO.StockDTO;
 import com.tfg.ms_inventory.DTO.MovimientoDTO;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,8 +10,6 @@ import com.tfg.ms_inventory.Repository.MovimientoRepository;
 import com.tfg.ms_inventory.Model.Stock;
 import com.tfg.ms_inventory.Model.Movimiento;
 import com.tfg.ms_inventory.DTO.MovimientoRequestDTO;
-
-import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -27,8 +24,7 @@ public class InventarioService {
 
     private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles) {
         com.tfg.ms_inventory.DTO.AuditoriaEventoDTO evento = new com.tfg.ms_inventory.DTO.AuditoriaEventoDTO(
-            "INVENTORY", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles
-        );
+                "INVENTORY", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles);
         rabbitTemplate.convertAndSend("cola.auditoria", evento);
     }
 
@@ -67,7 +63,8 @@ public class InventarioService {
 
         stockRepository.save(stock);
         Movimiento movimientoGenerado = crearMovimiento(movimientoRequest, stock.getCantidadDisponible());
-        auditar("POST_MOVIMIENTO", movimientoGenerado.getId(), movimientoRequest.getUsuarioEmail(), "Movimiento de stock: " + movimientoRequest.getTipo());
+        auditar("POST_MOVIMIENTO", movimientoGenerado.getId(), movimientoRequest.getUsuarioEmail(),
+                "Movimiento de stock: " + movimientoRequest.getTipo());
         return mapToMovimientoDTO(movimientoGenerado);
     }
 
