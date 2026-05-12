@@ -92,12 +92,12 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 > Objetivo: Eureka + Gateway funcionando (Alejandro se encarga de `ms-users` con JWT).
 
 **Día 1:**
-- [ ] Crear proyecto `eureka-server`:
+- [x] Crear proyecto `eureka-server`:
   - Solo `@EnableEurekaServer` y configurar `application.yml`
   - Verificar que arranca y la UI es visible en `localhost:8761`
 
 **Día 2:**
-- [ ] Crear proyecto `api-gateway`:
+- [x] Crear proyecto `api-gateway`:
   - Dependencias: Spring Cloud Gateway, Eureka Client
   - Rutas configuradas para todos los MS por nombre lógico (`lb://ms-catalog`, etc.)
   - **`JwtAuthFilter` (GlobalFilter):**
@@ -107,7 +107,7 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
     - Inyectar `X-User-Email` y `X-User-Roles` a los microservicios
     - Devolver 401/403 según corresponda
   - Configurar CORS
-- [ ] Registrar `eureka-server` y esperar que `ms-users` (Alejandro) se registre para probar el Gateway
+- [x] Registrar `eureka-server` y esperar que `ms-users` (Alejandro) se registre para probar el Gateway
 
 > 💡 Ángel necesita el `JWT_SECRET` que Alejandro define el día 1 para poder configurar el `JwtAuthFilter` del Gateway.
 
@@ -161,6 +161,7 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 - [ ] Test con Postman: entrada → ver stock → ver evento en RabbitMQ
 
 #### 🟢 Ángel — Día 3
+> 👉 **Ver código de apoyo:** [GUIA_ANGEL_DIA_3.md](./GUIA_ANGEL_DIA_3.md)
 - [ ] Crear proyecto `ms-audit`:
   - Entidad `Log` (append-only)
   - Listener RabbitMQ que consume `cola.auditoria` y persiste en `db_audit`
