@@ -7,6 +7,7 @@ import com.tfg.ms_suppliers.Repository.ProveedorRepository;
 import java.util.List;
 import com.tfg.ms_suppliers.DTO.ProveedorDTO;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class ProveedorService {
@@ -22,20 +23,40 @@ public class ProveedorService {
         return proveedorRepository.findById(id).map(this::mapToDTO).orElse(null);
     }
 
-    public ProveedorDTO save(Proveedor proveedor) {
-        Proveedor proveedorGuardado = proveedorRepository.save(proveedor);
+    public ProveedorDTO save(Proveedor proveedorDTO) {
+        if (existsByEmail(proveedorDTO.getEmail())) {
+            throw new IllegalArgumentException("El email ya está en uso por otro proveedor");
+        }
+        Proveedor proveedorGuardado = proveedorRepository.save(proveedorDTO);
         return mapToDTO(proveedorGuardado);
     }
 
-    public ProveedorDTO update(Long id, Proveedor proveedor) {
-        Proveedor proveedorExistente = proveedorRepository.findById(id);
-        if (proveedorExistente == null) {
-            return null;
+    public ProveedorDTO update(Long id, Proveedor proveedorDTO) {
+        Optional<Proveedor> proveedorExistente = proveedorRepository.findById(id);
+        if (proveedorExistente.isPresent()) {
+            Proveedor proveedor = proveedorExistente.get();
+            if (!proveedor.getEmail().equals(proveedorDTO.getEmail()) && existsByEmail(proveedorDTO.getEmail())) {
+                throw new IllegalArgumentException("El email ya está en uso por otro proveedor");
+            }
+            proveedor.setNombre(proveedorDTO.getNombre());
+            proveedor.setDireccion(proveedorDTO.getDireccion());
+            proveedor.setEmail(proveedorDTO.getEmail());
+            return mapToDTO(proveedorRepository.save(proveedor));
         }
-        proveedorExistente.setNombre(proveedor.getNombre());
-        proveedorExistente.setDireccion(proveedor.getDireccion());
-        proveedorExistente.setEmail(proveedor.getEmail());
-        return mapToDTO(proveedorRepository.save(proveedorExistente));
+        return null;
+    }
+
+    public ProveedorDTO delete(Long id) {
+        Optional<Proveedor> proveedorExistente = proveedorRepository.findById(id);
+        if (proveedorExistente.isPresent()) {
+            proveedorRepository.deleteById(id);
+            return mapToDTO(proveedorExistente.get());
+        }
+        return null;
+    }
+
+    public boolean existsByEmail(String email) {
+        return proveedorRepository.existsByEmail(email);
     }
 
     public ProveedorDTO mapToDTO(Proveedor proveedor) {
