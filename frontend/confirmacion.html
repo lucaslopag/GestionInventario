@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación | Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="glass-card" style="text-align: center;">
+        <div id="loading">
+            <h1 class="brand">Verificando...</h1>
+            <p class="subtitle">Estamos procesando tu enlace de confirmación.</p>
+        </div>
+
+        <div id="success" style="display: none;">
+            <h1 style="color: var(--success);">¡Cuenta Activada!</h1>
+            <p class="subtitle">Tu cuenta ha sido confirmada con éxito. Ya puedes empezar a gestionar tu inventario.</p>
+            <a href="index.html"><button>Ir al Login</button></a>
+        </div>
+
+        <div id="error" style="display: none;">
+            <h1 style="color: var(--error);">Error de Enlace</h1>
+            <p class="subtitle" id="errorMsg">El token de confirmación no es válido o ha expirado.</p>
+            <a href="index.html" style="color: var(--accent); text-decoration: none;">Volver al inicio</a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const loading = document.getElementById('loading');
+            const success = document.getElementById('success');
+            const error = document.getElementById('error');
+
+            if (!token) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                return;
+            }
+
+            try {
+                // TODO: Llamada real a /auth/confirmar?token=...
+                // Por ahora simulamos éxito tras 2 segundos
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    success.style.display = 'block';
+                }, 2000);
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
