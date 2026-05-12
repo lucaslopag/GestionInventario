@@ -18,13 +18,13 @@ public class ProveedorController {
     private ProveedorService proveedorService;
 
     @GetMapping
-    public ResponseEntity<List<ProveedorDTO>> getAll() {
-        return ResponseEntity.ok(proveedorService.findAll());
+    public ResponseEntity<List<ProveedorDTO>> getAll(@RequestHeader("X-User-Email") String usuarioEmail) {
+        return ResponseEntity.ok(proveedorService.findAll(usuarioEmail));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProveedorDTO> getById(@PathVariable Long id) {
-        ProveedorDTO proveedor = proveedorService.findById(id);
+    public ResponseEntity<ProveedorDTO> getById(@PathVariable Long id, @RequestHeader("X-User-Email") String usuarioEmail) {
+        ProveedorDTO proveedor = proveedorService.findById(id, usuarioEmail);
         if (proveedor == null) {
             return ResponseEntity.notFound().build();
         }
@@ -32,14 +32,14 @@ public class ProveedorController {
     }
 
     @PostMapping
-    public ResponseEntity<ProveedorDTO> create(@Valid @RequestBody ProveedorDTO proveedorDTO) {
-        ProveedorDTO nuevoProveedor = proveedorService.save(proveedorDTO);
+    public ResponseEntity<ProveedorDTO> create(@Valid @RequestBody ProveedorDTO proveedorDTO, @RequestHeader("X-User-Email") String usuarioEmail) {
+        ProveedorDTO nuevoProveedor = proveedorService.save(proveedorDTO, usuarioEmail);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProveedor);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @Valid @RequestBody ProveedorDTO proveedorDTO) {
-        ProveedorDTO actualizado = proveedorService.update(id, proveedorDTO);
+    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @Valid @RequestBody ProveedorDTO proveedorDTO, @RequestHeader("X-User-Email") String usuarioEmail) {
+        ProveedorDTO actualizado = proveedorService.update(id, proveedorDTO, usuarioEmail);
         if (actualizado == null) {
             return ResponseEntity.notFound().build();
         }
@@ -47,8 +47,8 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        proveedorService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, @RequestHeader("X-User-Email") String usuarioEmail) {
+        proveedorService.delete(id, usuarioEmail);
         return ResponseEntity.noContent().build();
     }
 }

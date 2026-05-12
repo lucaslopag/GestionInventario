@@ -7,6 +7,7 @@ import com.tfg.ms_suppliers.Repository.ProveedorRepository;
 import java.util.List;
 import com.tfg.ms_suppliers.DTO.ProveedorDTO;
 import java.util.stream.Collectors;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 @Service
 public class ProveedorService {
@@ -14,24 +15,37 @@ public class ProveedorService {
     @Autowired
     private ProveedorRepository proveedorRepository;
 
-    public List<ProveedorDTO> findAll() {
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles) {
+        com.tfg.ms_suppliers.DTO.AuditoriaEventoDTO evento = new com.tfg.ms_suppliers.DTO.AuditoriaEventoDTO(
+            "SUPPLIERS", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles
+        );
+        rabbitTemplate.convertAndSend("cola.auditoria", evento);
+    }
+
+    public List<ProveedorDTO> findAll(String usuarioEmail) {
+        auditar("GET_ALL", null, usuarioEmail, "Consulta de todos los proveedores");
         return proveedorRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    public ProveedorDTO findById(Long id) {
+    public ProveedorDTO findById(Long id, String usuarioEmail) {
+        auditar("GET", id, usuarioEmail, "Consulta de proveedor por ID");
         return proveedorRepository.findById(id).map(this::mapToDTO).orElse(null);
     }
 
-    public ProveedorDTO save(ProveedorDTO proveedorDTO) {
+    public ProveedorDTO save(ProveedorDTO proveedorDTO, String usuarioEmail) {
         if (proveedorRepository.existsByEmail(proveedorDTO.getEmail())) {
             throw new IllegalArgumentException("El email ya está registrado");
         }
         Proveedor proveedor = mapToEntity(proveedorDTO);
         Proveedor proveedorGuardado = proveedorRepository.save(proveedor);
+        auditar("POST", proveedorGuardado.getId(), usuarioEmail, "Creación de proveedor");
         return mapToDTO(proveedorGuardado);
     }
 
-    public ProveedorDTO update(Long id, ProveedorDTO proveedorDTO) {
+    public ProveedorDTO update(Long id, ProveedorDTO proveedorDTO, String usuarioEmail) {
         Proveedor proveedorExistente = proveedorRepository.findById(id).orElse(null);
         if (proveedorExistente == null) {
             return null;
@@ -47,11 +61,14 @@ public class ProveedorService {
         proveedorExistente.setDireccion(proveedorDTO.getDireccion());
         proveedorExistente.setEmail(proveedorDTO.getEmail());
         
-        return mapToDTO(proveedorRepository.save(proveedorExistente));
+        ProveedorDTO actualizado = mapToDTO(proveedorRepository.save(proveedorExistente));
+        auditar("PUT", id, usuarioEmail, "Actualización de proveedor");
+        return actualizado;
     }
 
-    public void delete(Long id) {
+    public void delete(Long id, String usuarioEmail) {
         proveedorRepository.deleteById(id);
+        auditar("DELETE", id, usuarioEmail, "Borrado de proveedor");
     }
 
     public ProveedorDTO mapToDTO(Proveedor proveedor) {
