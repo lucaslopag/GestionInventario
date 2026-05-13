@@ -44,14 +44,14 @@
 
             try {
                 const response = await fetch(`http://localhost:8080/api/auth/confirmar?token=${token}`);
-                const data = await response.json();
+                const text = await response.text();
 
                 loading.style.display = 'none';
 
-                if (response.ok && (data.success || data.message?.toLowerCase().includes('confirmad'))) {
+                if (response.ok && (text.toLowerCase().includes('éxito') || text.toLowerCase().includes('confirmad'))) {
                     success.style.display = 'block';
                 } else {
-                    document.getElementById('errorMsg').textContent = data.message || 'El token no es válido o ha expirado.';
+                    document.getElementById('errorMsg').textContent = text || 'El token no es válido o ha expirado.';
                     error.style.display = 'block';
                 }
 
