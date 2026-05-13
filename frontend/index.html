@@ -40,19 +40,35 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const alert = document.getElementById('alert');
+            const btnSubmit = document.getElementById('btnSubmit');
 
             try {
-                // Mock de login para el Día 2
-                console.log('Login intent:', { email, password });
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = 'Iniciando sesión...';
                 
-                alert.className = 'alert alert-error';
-                alert.textContent = 'El sistema aún no está conectado al backend. Pero el diseño ya funciona.';
-                alert.style.display = 'block';
+                const response = await api.post('/auth/login', { email, password });
+
+                if (response.token) {
+                    localStorage.setItem('token', response.token);
+                    // Opcional: guardar datos básicos del usuario si el backend los devuelve
+                    if (response.user) {
+                        localStorage.setItem('user', JSON.stringify(response.user));
+                    }
+                    
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert.className = 'alert alert-error';
+                    alert.textContent = response.message || 'Credenciales incorrectas';
+                    alert.style.display = 'block';
+                }
 
             } catch (err) {
                 alert.className = 'alert alert-error';
-                alert.textContent = 'Error al conectar con el servidor';
+                alert.textContent = 'Error al conectar con el servidor. Verifica que el Gateway esté encendido.';
                 alert.style.display = 'block';
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Iniciar Sesión';
             }
         });
     </script>

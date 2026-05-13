@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos | Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="display: block;">
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">
+                <span class="brand">Inventary</span>
+            </h1>
+            
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="productos.html" class="nav-link active"><i data-lucide="package"></i> Productos</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="users"></i> Proveedores</a>
+                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
+                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
+            </nav>
+
+            <div style="margin-top: auto;">
+                <a href="index.html" class="nav-link" style="color: var(--error);"><i data-lucide="log-out"></i> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header style="margin-bottom: 3rem;">
+                <h2>Gestión de Productos</h2>
+                <p style="color: var(--text-secondary);">Administra el catálogo de productos de tu almacén.</p>
+            </header>
+
+            <!-- Acciones -->
+            <div class="controls-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o categoría...">
+                </div>
+                <button class="btn-add" id="openModalBtn">+ Nuevo Producto</button>
+            </div>
+
+            <!-- Tabla de Productos -->
+            <div class="table-container">
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsBody">
+                        <!-- Se llenará con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Nuevo Producto -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Añadir Producto</h3>
+                <button class="close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="prodName">Nombre del Producto</label>
+                    <input type="text" id="prodName" required placeholder="Ej. Laptop Pro">
+                </div>
+                <div class="form-group">
+                    <label for="prodCat">Categoría</label>
+                    <input type="text" id="prodCat" required placeholder="Ej. Electrónica">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="prodPrice">Precio (€)</label>
+                        <input type="number" id="prodPrice" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="prodStock">Stock Inicial</label>
+                        <input type="number" id="prodStock" required placeholder="0">
+                    </div>
+                </div>
+                <button type="submit">Guardar Producto</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Datos de ejemplo (Mock)
+        let products = [
+            { id: 1, nombre: 'Monitor 4K LG', categoria: 'Monitores', precio: 349.99, stock: 15 },
+            { id: 2, nombre: 'Teclado Mecánico RGB', categoria: 'Periféricos', precio: 89.50, stock: 5 },
+            { id: 3, nombre: 'Ratón Inalámbrico', categoria: 'Periféricos', precio: 45.00, stock: 0 },
+            { id: 4, nombre: 'Memoria RAM 16GB', categoria: 'Componentes', precio: 65.00, stock: 42 }
+        ];
+
+        const productsBody = document.getElementById('productsBody');
+        const searchInput = document.getElementById('searchInput');
+        const modal = document.getElementById('modalOverlay');
+        const openModalBtn = document.getElementById('openModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const productForm = document.getElementById('productForm');
+
+        // Función para renderizar la tabla
+        function renderProducts(data) {
+            productsBody.innerHTML = '';
+            data.forEach(p => {
+                const stockStatus = p.stock === 0 ? 'badge-danger' : (p.stock < 10 ? 'badge-warning' : 'badge-stock');
+                const stockText = p.stock === 0 ? 'Sin Stock' : (p.stock < 10 ? 'Stock Bajo' : 'Disponible');
+
+                productsBody.innerHTML += `
+                    <tr>
+                        <td>#${p.id}</td>
+                        <td style="font-weight: 600;">${p.nombre}</td>
+                        <td>${p.categoria}</td>
+                        <td>${p.precio.toFixed(2)}€</td>
+                        <td>${p.stock}</td>
+                        <td><span class="badge ${stockStatus}">${stockText}</span></td>
+                        <td>
+                            <button style="width: auto; padding: 0.4rem 0.8rem; background: none; color: var(--accent); border: 1px solid var(--accent);">Editar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Buscador
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = products.filter(p => 
+                p.nombre.toLowerCase().includes(term) || 
+                p.categoria.toLowerCase().includes(term)
+            );
+            renderProducts(filtered);
+        });
+
+        // Modal Logic
+        openModalBtn.onclick = () => modal.style.display = 'flex';
+        closeModalBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; }
+
+        // Form Submit
+        productForm.onsubmit = (e) => {
+            e.preventDefault();
+            const newProd = {
+                id: products.length + 1,
+                nombre: document.getElementById('prodName').value,
+                categoria: document.getElementById('prodCat').value,
+                precio: parseFloat(document.getElementById('prodPrice').value),
+                stock: parseInt(document.getElementById('prodStock').value)
+            };
+            products.push(newProd);
+            renderProducts(products);
+            modal.style.display = 'none';
+            productForm.reset();
+        };
+
+        // Inicializar
+        renderProducts(products);
+        lucide.createIcons();
+    </script>
+</body>
+</html>
