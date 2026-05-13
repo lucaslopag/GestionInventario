@@ -22,7 +22,11 @@ public class ProveedorService {
         com.tfg.ms_suppliers.DTO.AuditoriaEventoDTO evento = new com.tfg.ms_suppliers.DTO.AuditoriaEventoDTO(
             "SUPPLIERS", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles
         );
-        rabbitTemplate.convertAndSend("cola.auditoria", evento);
+        rabbitTemplate.convertAndSend(
+            com.tfg.ms_suppliers.Config.RabbitMQConfig.EXCHANGE_AUDITORIA,
+            com.tfg.ms_suppliers.Config.RabbitMQConfig.ROUTING_KEY_AUDITORIA,
+            evento
+        );
     }
 
     public List<ProveedorDTO> findAll(String usuarioEmail) {

@@ -9,12 +9,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    public static final String EXCHANGE_AUDITORIA = "exchange.auditoria";
+    public static final String ROUTING_KEY_AUDITORIA = "audit.users";
+
     @Value("${spring.rabbitmq.queues.mail}")
     private String mailQueue;
 
     @Bean
     public Queue mailQueue() {
-        return new Queue(mailQueue, true);
+        return org.springframework.amqp.core.QueueBuilder.durable(mailQueue)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", mailQueue + ".dlq")
+                .build();
     }
 
     @Bean
