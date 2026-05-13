@@ -14,7 +14,10 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue mailQueue() {
-        return new Queue(mailQueue, true);
+        return org.springframework.amqp.core.QueueBuilder.durable(mailQueue)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", mailQueue + ".dlq")
+                .build();
     }
 
     @Bean

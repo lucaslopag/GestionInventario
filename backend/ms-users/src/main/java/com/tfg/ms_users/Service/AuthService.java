@@ -1,8 +1,8 @@
-package com.tfg.ms_users.Service;
+package com.tfg.ms_users.service;
 
-import com.tfg.ms_users.DTO.RegisterRequest;
-import com.tfg.ms_users.Entity.Usuario;
-import com.tfg.ms_users.Repository.UsuarioRepository;
+import com.tfg.ms_users.dto.RegisterRequest;
+import com.tfg.ms_users.entity.Usuario;
+import com.tfg.ms_users.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
