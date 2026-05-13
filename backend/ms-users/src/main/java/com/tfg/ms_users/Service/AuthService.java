@@ -23,6 +23,23 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RabbitTemplate rabbitTemplate;
     private final JwtService jwtService;
+    private final com.tfg.ms_users.Config.RabbitMQConfig rabbitMQConfig;
+
+    private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles) {
+        com.tfg.ms_users.dto.AuditoriaEventoDTO evento = com.tfg.ms_users.dto.AuditoriaEventoDTO.builder()
+                .servicioOrigen("USERS")
+                .accion(accion)
+                .entidadId(entidadId)
+                .usuarioEmail(usuarioEmail)
+                .fecha(LocalDateTime.now())
+                .detalles(detalles)
+                .build();
+        rabbitTemplate.convertAndSend(
+                com.tfg.ms_users.Config.RabbitMQConfig.EXCHANGE_AUDITORIA,
+                com.tfg.ms_users.Config.RabbitMQConfig.ROUTING_KEY_AUDITORIA,
+                evento
+        );
+    }
 
     @Value("${spring.rabbitmq.queues.mail}")
     private String mailQueue;
@@ -49,6 +66,9 @@ public class AuthService {
                 .build();
 
         usuarioRepository.save(usuario);
+
+        // Auditar registro
+        auditar("REGISTER", usuario.getId(), usuario.getEmail(), "Registro de nuevo usuario: " + usuario.getNombre());
 
         // 3. Enviar mensaje a RabbitMQ para mandar email
         enviarEmailConfirmacion(usuario);
@@ -109,6 +129,9 @@ public class AuthService {
 
         // 4. Generar Token JWT
         String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol());
+
+        // Auditar login
+        auditar("LOGIN", usuario.getId(), usuario.getEmail(), "Inicio de sesión exitoso");
 
         return LoginResponse.builder()
                 .token(token)

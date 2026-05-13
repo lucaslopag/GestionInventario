@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario | Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="display: block;">
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">
+                <span class="brand">Inventary</span>
+            </h1>
+            
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="users"></i> Proveedores</a>
+                <a href="inventario.html" class="nav-link active"><i data-lucide="refresh-cw"></i> Inventario</a>
+                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
+            </nav>
+
+            <div style="margin-top: auto;">
+                <a href="index.html" class="nav-link" style="color: var(--error);"><i data-lucide="log-out"></i> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header style="margin-bottom: 3rem;">
+                <h2>Control de Stock</h2>
+                <p style="color: var(--text-secondary);">Realiza ajustes de inventario, entradas y salidas de mercancía.</p>
+            </header>
+
+            <!-- Acciones -->
+            <div class="controls-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar producto para ajustar...">
+                </div>
+            </div>
+
+            <!-- Tabla de Inventario -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Stock Actual</th>
+                            <th>Nivel</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody">
+                        <!-- Se llenará con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Ajuste de Stock -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Ajustar Stock: <span id="targetProdName" style="color: var(--accent);"></span></h3>
+                <button class="close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="adjustmentForm">
+                <input type="hidden" id="targetProdId">
+                
+                <div class="form-group">
+                    <label>Tipo de Movimiento</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: rgba(0,230,118,0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(0,230,118,0.2);">
+                            <input type="radio" name="moveType" value="IN" checked style="width: auto;"> Entrada (+)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: rgba(255,75,92,0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,75,92,0.2);">
+                            <input type="radio" name="moveType" value="OUT" style="width: auto;"> Salida (-)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adjQuantity">Cantidad</label>
+                    <input type="number" id="adjQuantity" required min="1" placeholder="Ej. 10">
+                </div>
+
+                <div class="form-group">
+                    <label for="adjReason">Motivo / Notas</label>
+                    <input type="text" id="adjReason" required placeholder="Ej. Reposición semanal, Venta a cliente...">
+                </div>
+
+                <button type="submit">Confirmar Ajuste</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let allProducts = [];
+
+        const inventoryBody = document.getElementById('inventoryBody');
+        const searchInput = document.getElementById('searchInput');
+        const modal = document.getElementById('modalOverlay');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const adjustmentForm = document.getElementById('adjustmentForm');
+
+        function renderInventory(data) {
+            inventoryBody.innerHTML = '';
+            if (data.length === 0) {
+                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay productos en el inventario.</td></tr>';
+                return;
+            }
+            data.forEach(p => {
+                const stock = p.cantidadDisponible ?? p.stock ?? 0;
+                const stockStatus = stock === 0 ? 'badge-danger' : (stock < 10 ? 'badge-warning' : 'badge-stock');
+                const levelText = stock === 0 ? 'Agotado' : (stock < 10 ? 'Bajo' : 'Óptimo');
+                const nombre = p.nombreProducto ?? p.nombre ?? `Producto #${p.productoId ?? p.id}`;
+                const categoria = p.categoria ?? '-';
+
+                inventoryBody.innerHTML += `
+                    <tr>
+                        <td>#${p.productoId ?? p.id}</td>
+                        <td style="font-weight: 600;">${nombre}</td>
+                        <td>${categoria}</td>
+                        <td style="font-size: 1.2rem; font-weight: 700;">${stock}</td>
+                        <td><span class="badge ${stockStatus}">${levelText}</span></td>
+                        <td>
+                            <button onclick="openAdjustment(${p.productoId ?? p.id}, '${nombre}')" style="width: auto; padding: 0.4rem 0.8rem; background: var(--accent); color: #0b0f1a;">Ajustar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Cargar stock desde ms-inventory o ms-catalog
+        async function loadInventory() {
+            inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            try {
+                // Intentar obtener el stock consolidado del inventario
+                const data = await api.get('/inventario/stock');
+                allProducts = Array.isArray(data) ? data : (data.content ?? []);
+                renderInventory(allProducts);
+            } catch (err) {
+                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error);">Error al cargar inventario.</td></tr>';
+            }
+        }
+
+        function openAdjustment(id, name) {
+            document.getElementById('targetProdId').value = id;
+            document.getElementById('targetProdName').textContent = name;
+            modal.style.display = 'flex';
+        }
+
+        // Buscador local
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allProducts.filter(p =>
+                (p.nombreProducto ?? p.nombre ?? '').toLowerCase().includes(term) ||
+                (p.categoria ?? '').toLowerCase().includes(term)
+            );
+            renderInventory(filtered);
+        });
+
+        // Modal
+        closeModalBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; }
+
+        // Confirmar ajuste: llama a /api/inventario/entrada o /api/inventario/salida
+        adjustmentForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const productoId = parseInt(document.getElementById('targetProdId').value);
+            const cantidad = parseInt(document.getElementById('adjQuantity').value);
+            const tipo = document.querySelector('input[name="moveType"]:checked').value;
+            const notas = document.getElementById('adjReason').value;
+
+            const endpoint = tipo === 'IN' ? '/inventario/entrada' : '/inventario/salida';
+            const body = { productoId, cantidad, notas };
+
+            try {
+                await api.post(endpoint, body);
+                await loadInventory();
+                modal.style.display = 'none';
+                adjustmentForm.reset();
+            } catch (err) {
+                alert('Error al registrar el movimiento. Comprueba el stock disponible.');
+            }
+        };
+
+        // Inicializar
+        loadInventory();
+        lucide.createIcons();
+    </script>
+</body>
+</html>

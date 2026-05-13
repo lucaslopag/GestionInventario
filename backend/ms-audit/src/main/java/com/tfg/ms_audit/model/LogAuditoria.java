@@ -11,7 +11,16 @@ public class LogAuditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "producto_id", nullable = false)
+    @Column(name = "entidad_id")
+    private Long entidadId;
+
+    @Column(name = "servicio_origen", nullable = false, length = 50)
+    private String servicioOrigen;
+
+    @Column(name = "detalles", length = 500)
+    private String detalles;
+
+    @Column(name = "producto_id")
     private Long productoId;
 
     @Column(name = "proveedor_id")
@@ -23,32 +32,40 @@ public class LogAuditoria {
     @Column(nullable = false)
     private String accion;
 
-    @Column(nullable = false)
+    @Column
     private Integer cantidad;
 
     @Column(nullable = false)
     private LocalDateTime fecha;
 
-    @Column(name = "stock_resultante", nullable = false)
+    @Column(name = "stock_resultante")
     private Integer stockResultante;
 
     // Constructores
     public LogAuditoria() {}
 
-    public LogAuditoria(Long id, Long productoId, Long proveedorId, String usuarioEmail, String accion, Integer cantidad, LocalDateTime fecha, Integer stockResultante) {
+    public LogAuditoria(Long id, Long entidadId, String servicioOrigen, String detalles, String usuarioEmail, String accion, LocalDateTime fecha) {
         this.id = id;
-        this.productoId = productoId;
-        this.proveedorId = proveedorId;
+        this.entidadId = entidadId;
+        this.servicioOrigen = servicioOrigen;
+        this.detalles = detalles;
         this.usuarioEmail = usuarioEmail;
         this.accion = accion;
-        this.cantidad = cantidad;
         this.fecha = fecha;
-        this.stockResultante = stockResultante;
     }
 
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getEntidadId() { return entidadId; }
+    public void setEntidadId(Long entidadId) { this.entidadId = entidadId; }
+
+    public String getServicioOrigen() { return servicioOrigen; }
+    public void setServicioOrigen(String servicioOrigen) { this.servicioOrigen = servicioOrigen; }
+
+    public String getDetalles() { return detalles; }
+    public void setDetalles(String detalles) { this.detalles = detalles; }
 
     public Long getProductoId() { return productoId; }
     public void setProductoId(Long productoId) { this.productoId = productoId; }

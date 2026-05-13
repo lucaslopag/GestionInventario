@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial | Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="display: block;">
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">
+                <span class="brand">Inventary</span>
+            </h1>
+            
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="users"></i> Proveedores</a>
+                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
+                <a href="historial.html" class="nav-link active"><i data-lucide="history"></i> Historial</a>
+            </nav>
+
+            <div style="margin-top: auto;">
+                <a href="index.html" class="nav-link" style="color: var(--error);"><i data-lucide="log-out"></i> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header style="margin-bottom: 3rem;">
+                <h2>Historial de Actividad</h2>
+                <p style="color: var(--text-secondary);">Registro detallado de todos los movimientos y cambios en el sistema.</p>
+            </header>
+
+            <!-- Filtros -->
+            <div class="controls-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Filtrar por producto o acción...">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <select id="typeFilter" style="background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 0.8rem; border-radius: 12px; outline: none; cursor: pointer;">
+                        <option value="ALL">Todos los tipos</option>
+                        <option value="IN">Entradas</option>
+                        <option value="OUT">Salidas</option>
+                        <option value="CREATE">Creaciones</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabla de Historial -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Producto / Entidad</th>
+                            <th>Cantidad</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- Se llenará con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let allHistory = [];
+
+        const historyBody = document.getElementById('historyBody');
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+
+        function renderHistory(data) {
+            historyBody.innerHTML = '';
+            if (data.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay registros en el historial.</td></tr>';
+                return;
+            }
+            data.forEach(h => {
+                // Mapeo flexible del campo acción (ENTRADA → IN, etc.)
+                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
+                let actionBadge = '';
+                switch(accion) {
+                    case 'IN':
+                    case 'ENTRADA': actionBadge = '<span class="badge badge-stock">ENTRADA</span>'; break;
+                    case 'OUT':
+                    case 'SALIDA': actionBadge = '<span class="badge badge-danger">SALIDA</span>'; break;
+                    default: actionBadge = `<span class="badge badge-warning">${accion}</span>`; break;
+                }
+
+                const fecha = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '-';
+                const usuario = h.usuarioEmail ?? h.usuario ?? '-';
+                const entidad = h.nombreProducto ?? `Producto #${h.productoId ?? '-'}`;
+                const cantidad = h.cantidad > 0 ? `+${h.cantidad}` : `${h.cantidad}`;
+                const colorCantidad = h.cantidad > 0 ? 'var(--success)' : 'var(--error)';
+                const motivo = h.notas ?? h.motivo ?? '-';
+
+                historyBody.innerHTML += `
+                    <tr>
+                        <td style="color: var(--text-secondary); font-size: 0.9rem;">${fecha}</td>
+                        <td style="font-weight: 600;">${usuario}</td>
+                        <td>${actionBadge}</td>
+                        <td>${entidad}</td>
+                        <td style="font-weight: 700; color: ${colorCantidad};">${cantidad}</td>
+                        <td style="font-style: italic; color: var(--text-secondary);">${motivo}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function loadHistory() {
+            historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            try {
+                const data = await api.get('/auditoria');
+                allHistory = Array.isArray(data) ? data : (data.content ?? []);
+                renderHistory(allHistory);
+            } catch (err) {
+                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error);">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
+            }
+        }
+
+        // Filtros combinados (locales)
+        function filterData() {
+            const term = searchInput.value.toLowerCase();
+            const type = typeFilter.value;
+
+            const filtered = allHistory.filter(h => {
+                const entidad = (h.nombreProducto ?? `Producto #${h.productoId}` ?? '').toLowerCase();
+                const motivo = (h.notas ?? h.motivo ?? '').toLowerCase();
+                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
+
+                const matchesTerm = entidad.includes(term) || motivo.includes(term);
+                const matchesType = type === 'ALL' || accion === type || accion === (type === 'IN' ? 'ENTRADA' : 'SALIDA');
+                return matchesTerm && matchesType;
+            });
+
+            renderHistory(filtered);
+        }
+
+        searchInput.addEventListener('input', filterData);
+        typeFilter.addEventListener('change', filterData);
+
+        // Inicializar
+        loadHistory();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
