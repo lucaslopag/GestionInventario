@@ -16,8 +16,8 @@ public class AuditoriaListener {
     private LogAuditoriaRepository logRepository;
 
     /**
-     * Escucha eventos de auditoría de múltiples microservicios (Users, Catalog, Inventory, Suppliers).
-     * Todos los eventos se procesan de forma centralizada y se guardan en la base de datos de auditoría.
+     * Escucha eventos de auditorÃ­a de mÃºltiples microservicios (Users, Catalog, Inventory, Suppliers).
+     * Todos los eventos se procesan de forma centralizada y se guardan en la base de datos de auditorÃ­a.
      */
     @RabbitListener(queues = {
             RabbitMQConfig.COLA_AUDITORIA_USERS,
@@ -27,7 +27,7 @@ public class AuditoriaListener {
     })
     public void recibirEventoAuditoria(AuditoriaEventoDTO evento) {
         System.out.println("\n[AUDIT] Nuevo evento recibido de: " + evento.getServicioOrigen());
-        System.out.println("Acción: " + evento.getAccion() + " | Entidad ID: " + evento.getEntidadId());
+        System.out.println("AcciÃ³n: " + evento.getAccion() + " | Entidad ID: " + evento.getEntidadId());
 
         try {
             LogAuditoria log = new LogAuditoria();
@@ -44,7 +44,7 @@ public class AuditoriaListener {
             log.setCantidad(evento.getCantidad());
             log.setStockResultante(evento.getStockResultante());
 
-            // Lógica de respaldo para compatibilidad si los campos específicos son nulos
+            // LÃ³gica de respaldo para compatibilidad si los campos especÃ­ficos son nulos
             if (log.getProductoId() == null && "CATALOG".equalsIgnoreCase(evento.getServicioOrigen())) {
                 log.setProductoId(evento.getEntidadId());
             } else if (log.getProductoId() == null && "INVENTORY".equalsIgnoreCase(evento.getServicioOrigen())) {
@@ -54,11 +54,11 @@ public class AuditoriaListener {
             }
 
             logRepository.save(log);
-            System.out.println("[AUDIT] Registro guardado con éxito.");
+            System.out.println("[AUDIT] Registro guardado con Ã©xito.");
             
         } catch (Exception e) {
-            System.err.println("[AUDIT] Error al procesar evento de auditoría: " + e.getMessage());
-            // En un entorno real, aquí se enviaría a una DLQ o se registraría el error
+            System.err.println("[AUDIT] Error al procesar evento de auditorÃ­a: " + e.getMessage());
+            // En un entorno real, aquÃ­ se enviarÃ­a a una DLQ o se registrarÃ­a el error
         }
     }
 }

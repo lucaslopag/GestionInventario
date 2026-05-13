@@ -18,7 +18,7 @@ public class AuditoriaController {
             @RequestHeader(value = "X-User-Roles", required = false) String roles) {
         if (!esAdmin(roles)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acceso denegado: solo ADMIN puede ver la auditoría");
+                    .body("Acceso denegado: solo ADMIN puede ver la auditorÃ­a");
         }
         return ResponseEntity.ok(logRepository.findAllByOrderByFechaDesc());
     }
@@ -29,7 +29,7 @@ public class AuditoriaController {
             @RequestHeader(value = "X-User-Roles", required = false) String roles) {
         if (!esAdmin(roles)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acceso denegado: solo ADMIN puede ver la auditoría");
+                    .body("Acceso denegado: solo ADMIN puede ver la auditorÃ­a");
         }
         return ResponseEntity.ok(logRepository.findByProductoIdOrderByFechaDesc(id));
     }
@@ -40,7 +40,7 @@ public class AuditoriaController {
             @RequestHeader(value = "X-User-Roles", required = false) String roles) {
         if (!esAdmin(roles)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acceso denegado: solo ADMIN puede ver la auditoría");
+                    .body("Acceso denegado: solo ADMIN puede ver la auditorÃ­a");
         }
         return ResponseEntity.ok(logRepository.findByUsuarioEmailOrderByFechaDesc(email));
     }
@@ -51,7 +51,7 @@ public class AuditoriaController {
             @RequestHeader(value = "X-User-Roles", required = false) String roles) {
         if (!esAdmin(roles)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Acceso denegado: solo ADMIN puede ver la auditoría");
+                    .body("Acceso denegado: solo ADMIN puede ver la auditorÃ­a");
         }
         return ResponseEntity.ok(logRepository.findByServicioOrigenOrderByFechaDesc(nombre.toUpperCase()));
     }
