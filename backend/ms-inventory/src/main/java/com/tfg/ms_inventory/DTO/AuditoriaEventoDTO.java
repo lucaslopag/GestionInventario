@@ -15,4 +15,17 @@ public class AuditoriaEventoDTO {
     private String usuarioEmail;
     private LocalDateTime fecha;
     private String detalles;
+    private Long productoId;
+    private Long proveedorId;
+    private Integer cantidad;
+    private Integer stockResultante;
+
+    public AuditoriaEventoDTO(String servicioOrigen, String accion, Long entidadId, String usuarioEmail, LocalDateTime fecha, String detalles) {
+        this.servicioOrigen = servicioOrigen;
+        this.accion = accion;
+        this.entidadId = entidadId;
+        this.usuarioEmail = usuarioEmail;
+        this.fecha = fecha;
+        this.detalles = detalles;
+    }
 }

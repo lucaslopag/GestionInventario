@@ -22,10 +22,15 @@ public class InventarioService {
     @Autowired
     private org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
-    private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles) {
+    private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles, Long productoId, Long proveedorId, Integer cantidad, Integer stockResultante) {
         com.tfg.ms_inventory.DTO.AuditoriaEventoDTO evento = new com.tfg.ms_inventory.DTO.AuditoriaEventoDTO(
-                "INVENTORY", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles);
-        rabbitTemplate.convertAndSend("cola.auditoria", evento);
+                "INVENTORY", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles,
+                productoId, proveedorId, cantidad, stockResultante);
+        rabbitTemplate.convertAndSend(
+                com.tfg.ms_inventory.Config.RabbitMQConfig.EXCHANGE_AUDITORIA,
+                com.tfg.ms_inventory.Config.RabbitMQConfig.ROUTING_KEY_AUDITORIA,
+                evento
+        );
     }
 
     public Stock crearStockInicial(Long productoId) {
@@ -64,7 +69,9 @@ public class InventarioService {
         stockRepository.save(stock);
         Movimiento movimientoGenerado = crearMovimiento(movimientoRequest, stock.getCantidadDisponible());
         auditar("POST_MOVIMIENTO", movimientoGenerado.getId(), movimientoRequest.getUsuarioEmail(),
-                "Movimiento de stock: " + movimientoRequest.getTipo());
+                "Movimiento de stock: " + movimientoRequest.getTipo(),
+                movimientoRequest.getProductoId(), movimientoRequest.getProveedorId(),
+                movimientoRequest.getCantidad(), stock.getCantidadDisponible());
         return mapToMovimientoDTO(movimientoGenerado);
     }
 
@@ -81,7 +88,7 @@ public class InventarioService {
     }
 
     public StockDTO consultarStock(Long productoId, String usuarioEmail) {
-        auditar("GET_STOCK", productoId, usuarioEmail, "Consulta de stock");
+        auditar("GET_STOCK", productoId, usuarioEmail, "Consulta de stock", productoId, null, null, null);
         Stock stock = stockRepository.findByProductoId(productoId).orElse(null);
         if (stock == null) {
             return null;
@@ -90,7 +97,7 @@ public class InventarioService {
     }
 
     public java.util.List<MovimientoDTO> obtenerMovimientos(String usuarioEmail) {
-        auditar("GET_MOVIMIENTOS", null, usuarioEmail, "Consulta de todos los movimientos");
+        auditar("GET_MOVIMIENTOS", null, usuarioEmail, "Consulta de todos los movimientos", null, null, null, null);
         return movimientoRepository.findAll().stream()
                 .map(this::mapToMovimientoDTO)
                 .collect(java.util.stream.Collectors.toList());

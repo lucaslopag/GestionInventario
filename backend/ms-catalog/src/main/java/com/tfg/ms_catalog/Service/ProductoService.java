@@ -29,7 +29,11 @@ public class ProductoService {
         com.tfg.ms_catalog.DTO.AuditoriaEventoDTO evento = new com.tfg.ms_catalog.DTO.AuditoriaEventoDTO(
             "CATALOG", accion, entidadId, usuarioEmail, java.time.LocalDateTime.now(), detalles
         );
-        rabbitTemplate.convertAndSend("cola.auditoria", evento);
+        rabbitTemplate.convertAndSend(
+            com.tfg.ms_catalog.Config.RabbitMQConfig.EXCHANGE_AUDITORIA, 
+            com.tfg.ms_catalog.Config.RabbitMQConfig.ROUTING_KEY_AUDITORIA, 
+            evento
+        );
     }
 
     public ProductoDTO crearProducto(ProductoDTO productoDTO, String usuarioEmail) {

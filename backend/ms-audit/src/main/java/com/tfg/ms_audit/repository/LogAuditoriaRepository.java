@@ -12,5 +12,9 @@ public interface LogAuditoriaRepository extends JpaRepository<LogAuditoria, Long
 
     List<LogAuditoria> findByUsuarioEmailOrderByFechaDesc(String usuarioEmail);
 
+    List<LogAuditoria> findByServicioOrigenOrderByFechaDesc(String servicioOrigen);
+
+    List<LogAuditoria> findByEntidadIdOrderByFechaDesc(Long entidadId);
+
     List<LogAuditoria> findAllByOrderByFechaDesc();
 }

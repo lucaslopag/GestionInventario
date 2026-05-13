@@ -13,31 +13,22 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String QUEUE_AUDITORIA = "cola.auditoria";
-    public static final String QUEUE_AUDITORIA_DLQ = "cola.auditoria.dlq";
+    public static final String QUEUE_AUDITORIA = "cola.auditoria.suppliers";
     public static final String EXCHANGE_AUDITORIA = "exchange.auditoria";
-    public static final String ROUTING_KEY_AUDITORIA = "routing.auditoria";
+    public static final String ROUTING_KEY_AUDITORIA = "audit.suppliers";
 
     @Bean
     public Queue auditoriaQueue() {
-        return QueueBuilder.durable(QUEUE_AUDITORIA)
-                .withArgument("x-dead-letter-exchange", "")
-                .withArgument("x-dead-letter-routing-key", QUEUE_AUDITORIA_DLQ)
-                .build();
+        return QueueBuilder.durable(QUEUE_AUDITORIA).build();
     }
 
     @Bean
-    public Queue auditoriaDlqQueue() {
-        return QueueBuilder.durable(QUEUE_AUDITORIA_DLQ).build();
+    public TopicExchange auditoriaExchange() {
+        return new TopicExchange(EXCHANGE_AUDITORIA);
     }
 
     @Bean
-    public DirectExchange auditoriaExchange() {
-        return new DirectExchange(EXCHANGE_AUDITORIA);
-    }
-
-    @Bean
-    public Binding bindingAuditoria(Queue auditoriaQueue, DirectExchange auditoriaExchange) {
+    public Binding bindingAuditoria(Queue auditoriaQueue, TopicExchange auditoriaExchange) {
         return BindingBuilder.bind(auditoriaQueue).to(auditoriaExchange).with(ROUTING_KEY_AUDITORIA);
     }
 

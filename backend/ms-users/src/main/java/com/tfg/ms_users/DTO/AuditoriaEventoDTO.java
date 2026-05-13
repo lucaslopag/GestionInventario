@@ -1,6 +1,7 @@
-package com.tfg.ms_suppliers.DTO;
+package com.tfg.ms_users.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class AuditoriaEventoDTO {
     private String servicioOrigen;
     private String accion;
@@ -20,12 +22,7 @@ public class AuditoriaEventoDTO {
     private Integer cantidad;
     private Integer stockResultante;
 
-    public AuditoriaEventoDTO(String servicioOrigen, String accion, Long entidadId, String usuarioEmail, LocalDateTime fecha, String detalles) {
-        this.servicioOrigen = servicioOrigen;
-        this.accion = accion;
-        this.entidadId = entidadId;
-        this.usuarioEmail = usuarioEmail;
-        this.fecha = fecha;
-        this.detalles = detalles;
+    public static class AuditoriaEventoDTOBuilder {
+        // El builder de Lombok ya manejará los campos nuevos si se usa @Builder en la clase
     }
 }
