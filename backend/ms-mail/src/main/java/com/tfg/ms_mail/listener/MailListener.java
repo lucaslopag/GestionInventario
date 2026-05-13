@@ -15,20 +15,17 @@ public class MailListener {
 
     @RabbitListener(queues = "cola.mails")
     public void recibirMensajeMail(Map<String, String> mensaje) {
-        String email = mensaje.get("email");
-        String nombre = mensaje.get("nombre");
-        String token = mensaje.get("token");
+        String email = mensaje.get("to");
+        String subject = mensaje.get("subject");
+        String body = mensaje.get("body");
 
         System.out.println(" Recibido mensaje para enviar email a: " + email);
 
         try {
             SimpleMailMessage emailMsg = new SimpleMailMessage();
             emailMsg.setTo(email);
-            emailMsg.setSubject("Confirma tu cuenta en Sistema de Inventario");
-            emailMsg.setText("Hola " + nombre + ",\n\n" +
-                    "Confirma tu cuenta aquí:\n" +
-                    "http://localhost:8080/api/auth/confirmar?token=" + token + "\n\n" +
-                    "Saludos,\nSistema de Gestión de Inventario");
+            emailMsg.setSubject(subject);
+            emailMsg.setText(body);
 
             mailSender.send(emailMsg);
             System.out.println(" Email enviado a: " + email);
