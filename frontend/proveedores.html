@@ -102,13 +102,9 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script>
-        // Datos de ejemplo (Mock)
-        let providers = [
-            { id: 1, nombre: 'Distribuciones Norte', contacto: 'Ana Martínez', telefono: '912 345 678', email: 'ana@norte.com', ciudad: 'Madrid' },
-            { id: 2, nombre: 'Global Tech', contacto: 'Luis Rodríguez', telefono: '934 567 890', email: 'luis@globaltech.es', ciudad: 'Barcelona' },
-            { id: 3, nombre: 'Suministros Industriales', contacto: 'Marta Sanz', telefono: '965 432 109', email: 'ventas@sumindustria.com', ciudad: 'Valencia' }
-        ];
+        let allProviders = [];
 
         const providersBody = document.getElementById('providersBody');
         const searchInput = document.getElementById('searchInput');
@@ -119,57 +115,85 @@
 
         function renderProviders(data) {
             providersBody.innerHTML = '';
+            if (data.length === 0) {
+                providersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay proveedores registrados.</td></tr>';
+                return;
+            }
             data.forEach(p => {
                 providersBody.innerHTML += `
                     <tr>
                         <td>#${p.id}</td>
                         <td style="font-weight: 600;">${p.nombre}</td>
-                        <td>${p.contacto}</td>
-                        <td>${p.telefono}</td>
+                        <td>${p.contacto ?? '-'}</td>
+                        <td>${p.telefono ?? '-'}</td>
                         <td>${p.email}</td>
-                        <td><span class="badge badge-stock">${p.ciudad}</span></td>
+                        <td><span class="badge badge-stock">${p.ciudad ?? p.direccion ?? '-'}</span></td>
                         <td>
-                            <button style="width: auto; padding: 0.4rem 0.8rem; background: none; color: var(--accent); border: 1px solid var(--accent);">Editar</button>
+                            <button onclick="deleteProvider(${p.id})" style="width: auto; padding: 0.4rem 0.8rem; background: none; color: var(--error); border: 1px solid var(--error);">Eliminar</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // Buscador
+        async function loadProviders() {
+            providersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            try {
+                const data = await api.get('/proveedores');
+                allProviders = Array.isArray(data) ? data : (data.content ?? []);
+                renderProviders(allProviders);
+            } catch (err) {
+                providersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error);">Error al cargar proveedores.</td></tr>';
+            }
+        }
+
+        async function deleteProvider(id) {
+            if (!confirm('¿Seguro que quieres eliminar este proveedor?')) return;
+            try {
+                await api.delete(`/proveedores/${id}`);
+                await loadProviders();
+            } catch (err) {
+                alert('Error al eliminar el proveedor.');
+            }
+        }
+
+        // Buscador local
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const filtered = providers.filter(p => 
-                p.nombre.toLowerCase().includes(term) || 
-                p.ciudad.toLowerCase().includes(term)
+            const filtered = allProviders.filter(p =>
+                p.nombre.toLowerCase().includes(term) ||
+                (p.ciudad ?? p.direccion ?? '').toLowerCase().includes(term)
             );
             renderProviders(filtered);
         });
 
-        // Modal Logic
+        // Modal
         openModalBtn.onclick = () => modal.style.display = 'flex';
         closeModalBtn.onclick = () => modal.style.display = 'none';
         window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; }
 
-        // Form Submit
-        providerForm.onsubmit = (e) => {
+        // Crear proveedor
+        providerForm.onsubmit = async (e) => {
             e.preventDefault();
             const newProv = {
-                id: providers.length + 1,
                 nombre: document.getElementById('provName').value,
                 contacto: document.getElementById('provContact').value,
                 telefono: document.getElementById('provPhone').value,
                 email: document.getElementById('provEmail').value,
                 ciudad: document.getElementById('provCity').value
             };
-            providers.push(newProv);
-            renderProviders(providers);
-            modal.style.display = 'none';
-            providerForm.reset();
+            try {
+                await api.post('/proveedores', newProv);
+                await loadProviders();
+                modal.style.display = 'none';
+                providerForm.reset();
+            } catch (err) {
+                alert('Error al crear el proveedor.');
+            }
         };
 
         // Inicializar
-        renderProviders(providers);
+        loadProviders();
         lucide.createIcons();
     </script>
 </body>

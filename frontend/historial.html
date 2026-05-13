@@ -73,15 +73,9 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script>
-        // Datos de ejemplo (Mock)
-        const historyData = [
-            { id: 1, fecha: '2024-05-13 09:45', usuario: 'Alejandro', accion: 'IN', entidad: 'Monitor 4K LG', cantidad: '+10', motivo: 'Compra a proveedor' },
-            { id: 2, fecha: '2024-05-13 08:20', usuario: 'Lucas', accion: 'OUT', entidad: 'Teclado Mecánico', cantidad: '-2', motivo: 'Venta Directa' },
-            { id: 3, fecha: '2024-05-12 18:10', usuario: 'Admin', accion: 'CREATE', entidad: 'Ratón Inalámbrico', cantidad: '-', motivo: 'Nuevo producto en catálogo' },
-            { id: 4, fecha: '2024-05-12 15:30', usuario: 'Alejandro', accion: 'OUT', entidad: 'Memoria RAM 16GB', cantidad: '-5', motivo: 'Ajuste por rotura' },
-            { id: 5, fecha: '2024-05-12 11:00', usuario: 'Ángel', accion: 'IN', entidad: 'Teclado Mecánico', cantidad: '+15', motivo: 'Reposición' }
-        ];
+        let allHistory = [];
 
         const historyBody = document.getElementById('historyBody');
         const searchInput = document.getElementById('searchInput');
@@ -89,35 +83,65 @@
 
         function renderHistory(data) {
             historyBody.innerHTML = '';
+            if (data.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay registros en el historial.</td></tr>';
+                return;
+            }
             data.forEach(h => {
+                // Mapeo flexible del campo acción (ENTRADA → IN, etc.)
+                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
                 let actionBadge = '';
-                switch(h.accion) {
-                    case 'IN': actionBadge = '<span class="badge badge-stock">ENTRADA</span>'; break;
-                    case 'OUT': actionBadge = '<span class="badge badge-danger">SALIDA</span>'; break;
-                    case 'CREATE': actionBadge = '<span class="badge badge-warning">CREACIÓN</span>'; break;
+                switch(accion) {
+                    case 'IN':
+                    case 'ENTRADA': actionBadge = '<span class="badge badge-stock">ENTRADA</span>'; break;
+                    case 'OUT':
+                    case 'SALIDA': actionBadge = '<span class="badge badge-danger">SALIDA</span>'; break;
+                    default: actionBadge = `<span class="badge badge-warning">${accion}</span>`; break;
                 }
+
+                const fecha = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '-';
+                const usuario = h.usuarioEmail ?? h.usuario ?? '-';
+                const entidad = h.nombreProducto ?? `Producto #${h.productoId ?? '-'}`;
+                const cantidad = h.cantidad > 0 ? `+${h.cantidad}` : `${h.cantidad}`;
+                const colorCantidad = h.cantidad > 0 ? 'var(--success)' : 'var(--error)';
+                const motivo = h.notas ?? h.motivo ?? '-';
 
                 historyBody.innerHTML += `
                     <tr>
-                        <td style="color: var(--text-secondary); font-size: 0.9rem;">${h.fecha}</td>
-                        <td style="font-weight: 600;">${h.usuario}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.9rem;">${fecha}</td>
+                        <td style="font-weight: 600;">${usuario}</td>
                         <td>${actionBadge}</td>
-                        <td>${h.entidad}</td>
-                        <td style="font-weight: 700; color: ${h.cantidad.startsWith('+') ? 'var(--success)' : (h.cantidad.startsWith('-') ? 'var(--error)' : 'white')}">${h.cantidad}</td>
-                        <td style="font-style: italic; color: var(--text-secondary);">${h.motivo}</td>
+                        <td>${entidad}</td>
+                        <td style="font-weight: 700; color: ${colorCantidad};">${cantidad}</td>
+                        <td style="font-style: italic; color: var(--text-secondary);">${motivo}</td>
                     </tr>
                 `;
             });
         }
 
-        // Filtros combinados
+        async function loadHistory() {
+            historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            try {
+                const data = await api.get('/auditoria');
+                allHistory = Array.isArray(data) ? data : (data.content ?? []);
+                renderHistory(allHistory);
+            } catch (err) {
+                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error);">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
+            }
+        }
+
+        // Filtros combinados (locales)
         function filterData() {
             const term = searchInput.value.toLowerCase();
             const type = typeFilter.value;
 
-            const filtered = historyData.filter(h => {
-                const matchesTerm = h.entidad.toLowerCase().includes(term) || h.motivo.toLowerCase().includes(term);
-                const matchesType = type === 'ALL' || h.accion === type;
+            const filtered = allHistory.filter(h => {
+                const entidad = (h.nombreProducto ?? `Producto #${h.productoId}` ?? '').toLowerCase();
+                const motivo = (h.notas ?? h.motivo ?? '').toLowerCase();
+                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
+
+                const matchesTerm = entidad.includes(term) || motivo.includes(term);
+                const matchesType = type === 'ALL' || accion === type || accion === (type === 'IN' ? 'ENTRADA' : 'SALIDA');
                 return matchesTerm && matchesType;
             });
 
@@ -128,7 +152,7 @@
         typeFilter.addEventListener('change', filterData);
 
         // Inicializar
-        renderHistory(historyData);
+        loadHistory();
         lucide.createIcons();
     </script>
 </body>

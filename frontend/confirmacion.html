@@ -43,15 +43,21 @@
             }
 
             try {
-                // TODO: Llamada real a /auth/confirmar?token=...
-                // Por ahora simulamos éxito tras 2 segundos
-                setTimeout(() => {
-                    loading.style.display = 'none';
+                const response = await fetch(`http://localhost:8080/api/auth/confirmar?token=${token}`);
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (response.ok && (data.success || data.message?.toLowerCase().includes('confirmad'))) {
                     success.style.display = 'block';
-                }, 2000);
+                } else {
+                    document.getElementById('errorMsg').textContent = data.message || 'El token no es válido o ha expirado.';
+                    error.style.display = 'block';
+                }
 
             } catch (err) {
                 loading.style.display = 'none';
+                document.getElementById('errorMsg').textContent = 'No se pudo conectar con el servidor.';
                 error.style.display = 'block';
             }
         });

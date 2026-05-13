@@ -102,14 +102,9 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script>
-        // Datos de ejemplo (Sincronizados conceptualmente con productos)
-        let products = [
-            { id: 1, nombre: 'Monitor 4K LG', categoria: 'Monitores', stock: 15 },
-            { id: 2, nombre: 'Teclado Mecánico RGB', categoria: 'Periféricos', stock: 5 },
-            { id: 3, nombre: 'Ratón Inalámbrico', categoria: 'Periféricos', stock: 0 },
-            { id: 4, nombre: 'Memoria RAM 16GB', categoria: 'Componentes', stock: 42 }
-        ];
+        let allProducts = [];
 
         const inventoryBody = document.getElementById('inventoryBody');
         const searchInput = document.getElementById('searchInput');
@@ -119,23 +114,43 @@
 
         function renderInventory(data) {
             inventoryBody.innerHTML = '';
+            if (data.length === 0) {
+                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay productos en el inventario.</td></tr>';
+                return;
+            }
             data.forEach(p => {
-                const stockStatus = p.stock === 0 ? 'badge-danger' : (p.stock < 10 ? 'badge-warning' : 'badge-stock');
-                const levelText = p.stock === 0 ? 'Agotado' : (p.stock < 10 ? 'Bajo' : 'Óptimo');
+                const stock = p.cantidadDisponible ?? p.stock ?? 0;
+                const stockStatus = stock === 0 ? 'badge-danger' : (stock < 10 ? 'badge-warning' : 'badge-stock');
+                const levelText = stock === 0 ? 'Agotado' : (stock < 10 ? 'Bajo' : 'Óptimo');
+                const nombre = p.nombreProducto ?? p.nombre ?? `Producto #${p.productoId ?? p.id}`;
+                const categoria = p.categoria ?? '-';
 
                 inventoryBody.innerHTML += `
                     <tr>
-                        <td>#${p.id}</td>
-                        <td style="font-weight: 600;">${p.nombre}</td>
-                        <td>${p.categoria}</td>
-                        <td style="font-size: 1.2rem; font-weight: 700;">${p.stock}</td>
+                        <td>#${p.productoId ?? p.id}</td>
+                        <td style="font-weight: 600;">${nombre}</td>
+                        <td>${categoria}</td>
+                        <td style="font-size: 1.2rem; font-weight: 700;">${stock}</td>
                         <td><span class="badge ${stockStatus}">${levelText}</span></td>
                         <td>
-                            <button onclick="openAdjustment(${p.id}, '${p.nombre}')" style="width: auto; padding: 0.4rem 0.8rem; background: var(--accent); color: #0b0f1a;">Ajustar</button>
+                            <button onclick="openAdjustment(${p.productoId ?? p.id}, '${nombre}')" style="width: auto; padding: 0.4rem 0.8rem; background: var(--accent); color: #0b0f1a;">Ajustar</button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        // Cargar stock desde ms-inventory o ms-catalog
+        async function loadInventory() {
+            inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            try {
+                // Intentar obtener el stock consolidado del inventario
+                const data = await api.get('/inventario/stock');
+                allProducts = Array.isArray(data) ? data : (data.content ?? []);
+                renderInventory(allProducts);
+            } catch (err) {
+                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error);">Error al cargar inventario.</td></tr>';
+            }
         }
 
         function openAdjustment(id, name) {
@@ -144,46 +159,43 @@
             modal.style.display = 'flex';
         }
 
-        // Buscador
+        // Buscador local
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const filtered = products.filter(p => 
-                p.nombre.toLowerCase().includes(term) || 
-                p.categoria.toLowerCase().includes(term)
+            const filtered = allProducts.filter(p =>
+                (p.nombreProducto ?? p.nombre ?? '').toLowerCase().includes(term) ||
+                (p.categoria ?? '').toLowerCase().includes(term)
             );
             renderInventory(filtered);
         });
 
-        // Modal Logic
+        // Modal
         closeModalBtn.onclick = () => modal.style.display = 'none';
         window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; }
 
-        // Adjustment Form Submit
-        adjustmentForm.onsubmit = (e) => {
+        // Confirmar ajuste: llama a /api/inventario/entrada o /api/inventario/salida
+        adjustmentForm.onsubmit = async (e) => {
             e.preventDefault();
-            const id = parseInt(document.getElementById('targetProdId').value);
-            const qty = parseInt(document.getElementById('adjQuantity').value);
-            const type = document.querySelector('input[name="moveType"]:checked').value;
-            
-            const product = products.find(p => p.id === id);
-            if (product) {
-                if (type === 'OUT' && product.stock < qty) {
-                    alert('No hay suficiente stock para realizar esta salida.');
-                    return;
-                }
-                
-                product.stock = (type === 'IN') ? product.stock + qty : product.stock - qty;
-                renderInventory(products);
+            const productoId = parseInt(document.getElementById('targetProdId').value);
+            const cantidad = parseInt(document.getElementById('adjQuantity').value);
+            const tipo = document.querySelector('input[name="moveType"]:checked').value;
+            const notas = document.getElementById('adjReason').value;
+
+            const endpoint = tipo === 'IN' ? '/inventario/entrada' : '/inventario/salida';
+            const body = { productoId, cantidad, notas };
+
+            try {
+                await api.post(endpoint, body);
+                await loadInventory();
                 modal.style.display = 'none';
                 adjustmentForm.reset();
-                
-                // Animación simple de éxito (podría ser un toast)
-                console.log(`Movimiento registrado: ${type} de ${qty} unidades para ${product.nombre}`);
+            } catch (err) {
+                alert('Error al registrar el movimiento. Comprueba el stock disponible.');
             }
         };
 
         // Inicializar
-        renderInventory(products);
+        loadInventory();
         lucide.createIcons();
     </script>
 </body>
