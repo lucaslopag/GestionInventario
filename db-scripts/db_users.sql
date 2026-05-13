@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre              VARCHAR(100)    NOT NULL,
     email               VARCHAR(150)    NOT NULL,
     password            VARCHAR(255)    NOT NULL,        -- BCrypt hash
-    rol                 ENUM('ADMIN', 'EMPLEADO') NOT NULL DEFAULT 'EMPLEADO',
+    rol                 VARCHAR(20)     NOT NULL DEFAULT 'ROLE_USER',
     confirmado          BOOLEAN         NOT NULL DEFAULT FALSE,
     token_confirmacion  VARCHAR(100)    NULL,
     token_expira        DATETIME        NULL,

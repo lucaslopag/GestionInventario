@@ -50,10 +50,14 @@
 
                 if (response.token) {
                     localStorage.setItem('token', response.token);
-                    // Opcional: guardar datos básicos del usuario si el backend los devuelve
-                    if (response.user) {
-                        localStorage.setItem('user', JSON.stringify(response.user));
-                    }
+                    
+                    // Guardamos los datos del usuario construyendo el objeto que esperan las otras páginas
+                    const userData = {
+                        nombre: response.nombre,
+                        email: response.email,
+                        rol: response.rol
+                    };
+                    localStorage.setItem('user', JSON.stringify(userData));
                     
                     window.location.href = 'dashboard.html';
                 } else {

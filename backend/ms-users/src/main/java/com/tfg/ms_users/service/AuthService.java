@@ -76,8 +76,13 @@ public class AuthService {
     }
 
     private void enviarEmailConfirmacion(Usuario usuario) {
+<<<<<<< HEAD:backend/ms-users/src/main/java/com/tfg/ms_users/service/AuthService.java
         String urlConfirmacion = appBaseUrl + "/api/auth/confirmar?token=" + usuario.getTokenConfirmacion();
 
+=======
+        String urlConfirmacion = appBaseUrl + "/confirmacion.html?token=" + usuario.getTokenConfirmacion();
+        
+>>>>>>> e8084e1c56c3b2949b598e00c1278c26521deb22:backend/ms-users/src/main/java/com/tfg/ms_users/Service/AuthService.java
         EmailMessage email = EmailMessage.builder()
                 .to(usuario.getEmail())
                 .subject("Confirma tu cuenta - Sistema de Inventario")
