@@ -73,11 +73,7 @@ public class AuthService {
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-<<<<<<< HEAD
-                .rol("EMPLEADO") // Asignar el rol 'EMPLEADO' por defecto según el FDD.
-=======
                 .rol(request.getRol() != null ? request.getRol().toUpperCase() : "EMPLEADO")
->>>>>>> 08c607ab255a6a7f232150ceb1b649386ff9dfa7
                 .confirmado(false)
                 .tokenConfirmacion(token)
                 .tokenExpira(LocalDateTime.now().plusHours(24))
