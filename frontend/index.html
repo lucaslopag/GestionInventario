@@ -48,10 +48,9 @@
                 
                 const response = await api.post('/auth/login', { email, password });
 
-                if (response.token) {
+                if (!response.error && response.token) {
                     localStorage.setItem('token', response.token);
                     
-                    // Guardamos los datos del usuario construyendo el objeto que esperan las otras páginas
                     const userData = {
                         nombre: response.nombre,
                         email: response.email,
@@ -62,7 +61,7 @@
                     window.location.href = 'dashboard.html';
                 } else {
                     alert.className = 'alert alert-error';
-                    alert.textContent = response.message || 'Credenciales incorrectas';
+                    alert.textContent = response.message;
                     alert.style.display = 'block';
                 }
 

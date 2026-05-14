@@ -14,24 +14,48 @@ const api = {
     async _handle(response) {
         // Redirigir al login si da 401 (token expirado) pero SOLO si no estamos ya en la página de login
         if (response.status === 401) {
+<<<<<<< HEAD
             const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
             if (!isLoginPage) {
+=======
+            // Si no estamos en el login, limpiamos y redirigimos
+            if (!window.location.pathname.endsWith('index.html')) {
+>>>>>>> 08c607ab255a6a7f232150ceb1b649386ff9dfa7
                 localStorage.clear();
                 window.location.href = 'index.html';
                 return;
             }
+<<<<<<< HEAD
         }
         
+=======
+            // Si estamos en el login, dejamos que fluya para mostrar el mensaje de error
+        }
+
+>>>>>>> 08c607ab255a6a7f232150ceb1b649386ff9dfa7
         const text = await response.text();
+        let data;
         try {
+<<<<<<< HEAD
             const data = JSON.parse(text);
             if (typeof data === 'object' && data !== null) {
                 data.success = response.ok;
             }
             return data;
+=======
+            data = JSON.parse(text);
+>>>>>>> 08c607ab255a6a7f232150ceb1b649386ff9dfa7
         } catch {
-            return { message: text, success: response.ok };
+            data = { message: text };
         }
+
+        if (!response.ok) {
+            // Si el backend no devuelve un campo 'message', buscamos en 'error' o lanzamos el status
+            const errorMsg = data.message || data.error || `Error ${response.status}: ${response.statusText}`;
+            return { error: true, message: errorMsg, status: response.status };
+        }
+
+        return { ...data, success: true };
     },
 
     // POST

@@ -58,7 +58,8 @@ public class InventarioService {
 
         } else if (movimientoRequest.getTipo().equals("SALIDA")) {
             if (stock.getCantidadDisponible() < movimientoRequest.getCantidad()) {
-                throw new IllegalArgumentException("No hay stock suficiente para realizar el movimiento");
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT, "No hay stock suficiente para realizar el movimiento");
             } else {
                 stock.setCantidadDisponible(
                         stock.getCantidadDisponible()

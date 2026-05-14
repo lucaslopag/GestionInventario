@@ -46,9 +46,10 @@ git commit -m "$COMMIT_MSG" 2>/dev/null || echo "[i] Nada nuevo que commitear."
 # Actualizar remote con el token
 git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
 
-# --- PULL AUTOMATICO antes de subir para evitar conflictos ---
+# --- PULL AUTOMATICO antes de subir para evitar conflictos (priorizando lo local) ---
 echo "[i] Sincronizando con el servidor antes de subir..."
-GIT_MERGE_AUTOEDIT=no git pull --no-edit origin "$BRANCH" 2>&1
+git config pull.rebase false
+GIT_MERGE_AUTOEDIT=no git pull --no-edit -X ours origin "$BRANCH" 2>&1
 if [ $? -ne 0 ]; then
   echo ""
   echo "======================================================"

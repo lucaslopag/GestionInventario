@@ -21,8 +21,19 @@ public class AuthController {
     }
 
     @GetMapping("/confirmar")
-    public ResponseEntity<String> confirmar(@RequestParam String token) {
-        return ResponseEntity.ok(authService.confirmar(token));
+    public ResponseEntity<Void> confirmar(@RequestParam String token) {
+        try {
+            authService.confirmar(token);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                    .location(java.net.URI.create("/confirmacion.html?status=ok"))
+                    .build();
+        } catch (Exception e) {
+            String reason = "error";
+            if (e.getMessage().contains("expirado")) reason = "expired";
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                    .location(java.net.URI.create("/confirmacion.html?status=error&reason=" + reason))
+                    .build();
+        }
     }
 
     @PostMapping("/login")

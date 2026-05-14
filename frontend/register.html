@@ -50,14 +50,18 @@
             try {
                 const response = await api.post('/auth/register', { nombre, email, password });
 
-                if (response.success || response.id) { // Dependiendo de qué devuelva tu backend
+                if (!response.error) {
                     alert.className = 'alert alert-success';
                     alert.textContent = '¡Registro con éxito! Revisa tu email para confirmar tu cuenta.';
                     alert.style.display = 'block';
                     document.getElementById('registerForm').reset();
                 } else {
                     alert.className = 'alert alert-error';
+<<<<<<< HEAD
                     alert.textContent = response.message || 'El email ya está en uso o los datos son inválidos.';
+=======
+                    alert.textContent = response.message;
+>>>>>>> 08c607ab255a6a7f232150ceb1b649386ff9dfa7
                     alert.style.display = 'block';
                 }
             } catch (err) {
