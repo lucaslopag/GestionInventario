@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.tfg.ms_users.config.RabbitMQConfig;
@@ -17,6 +18,7 @@ import com.tfg.ms_users.dto.LoginRequest;
 import com.tfg.ms_users.dto.LoginResponse;
 import com.tfg.ms_users.dto.RegisterRequest;
 import com.tfg.ms_users.entity.Usuario;
+import com.tfg.ms_users.exceptions.PasswordPolicyException;
 import com.tfg.ms_users.repository.UsuarioRepository;
 import com.tfg.ms_users.security.JwtService;
 
@@ -52,15 +54,15 @@ public class AuthService {
     @Value("${APP_BASE_URL:http://localhost:8080}")
     private String appBaseUrl;
 
+    @Transactional
     public String registrar(RegisterRequest request) {
         // 1. Validar política de contraseña (mínimo 8 caracteres, letras y números)
         String password = request.getPassword();
         String passwordRegex = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$";
         
         if (password == null || !password.matches(passwordRegex)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña debe tener al menos 8 caracteres, un dígito y una letra");
+            throw new PasswordPolicyException("La contraseña debe tener al menos 8 caracteres, un dígito y una letra");
         }
-
         // 2. Verificar si el email ya existe
         if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya esta registrado");
@@ -71,7 +73,7 @@ public class AuthService {
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .rol(request.getEmail() != null ? request.getEmail() : "EMPLEADO")
+                .rol("EMPLEADO") // Asignar el rol 'EMPLEADO' por defecto según el FDD.
                 .confirmado(false)
                 .tokenConfirmacion(token)
                 .tokenExpira(LocalDateTime.now().plusHours(24))
@@ -79,11 +81,19 @@ public class AuthService {
 
         usuarioRepository.save(usuario);
 
-        // Auditar registro
-        auditar("REGISTER", usuario.getId(), usuario.getEmail(), "Registro de nuevo usuario: " + usuario.getNombre());
+        // Auditar registro (tolerante a fallos de RabbitMQ)
+        try {
+            auditar("REGISTER", usuario.getId(), usuario.getEmail(), "Registro de nuevo usuario: " + usuario.getNombre());
+        } catch (Exception e) {
+            System.err.println("[WARN] No se pudo enviar evento de auditoria (RabbitMQ no disponible): " + e.getMessage());
+        }
 
-        // 3. Enviar mensaje a RabbitMQ para mandar email
-        enviarEmailConfirmacion(usuario);
+        // 3. Enviar mensaje a RabbitMQ para mandar email (tolerante a fallos)
+        try {
+            enviarEmailConfirmacion(usuario);
+        } catch (Exception e) {
+            System.err.println("[WARN] No se pudo enviar email de confirmacion (RabbitMQ no disponible): " + e.getMessage());
+        }
 
         return "Usuario registrado con exito. Revisa tu email para confirmar la cuenta.";
     }
@@ -144,8 +154,12 @@ public class AuthService {
         // 4. Generar Token JWT
         String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol());
 
-        // Auditar login
-        auditar("LOGIN", usuario.getId(), usuario.getEmail(), "Inicio de sesion exitoso");
+        // Auditar login (tolerante a fallos de RabbitMQ)
+        try {
+            auditar("LOGIN", usuario.getId(), usuario.getEmail(), "Inicio de sesion exitoso");
+        } catch (Exception e) {
+            System.err.println("[WARN] No se pudo enviar evento de auditoria en login (RabbitMQ no disponible): " + e.getMessage());
+        }
 
         return LoginResponse.builder()
                 .token(token)

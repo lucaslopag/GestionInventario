@@ -1,13 +1,15 @@
 package com.tfg.ms_audit.listener;
 
-import com.tfg.ms_audit.dto.AuditoriaEventoDTO;
-import com.tfg.ms_audit.model.LogAuditoria;
-import com.tfg.ms_audit.repository.LogAuditoriaRepository;
-import com.tfg.ms_audit.config.RabbitMQConfig;
+import java.time.LocalDateTime;
+
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.time.LocalDateTime;
+
+import com.tfg.ms_audit.config.RabbitMQConfig;
+import com.tfg.ms_audit.dto.AuditoriaEventoDTO;
+import com.tfg.ms_audit.model.LogAuditoria;
+import com.tfg.ms_audit.repository.LogAuditoriaRepository;
 
 @Component
 public class AuditoriaListener {
@@ -16,8 +18,8 @@ public class AuditoriaListener {
     private LogAuditoriaRepository logRepository;
 
     /**
-     * Escucha eventos de auditorÃ­a de mÃºltiples microservicios (Users, Catalog, Inventory, Suppliers).
-     * Todos los eventos se procesan de forma centralizada y se guardan en la base de datos de auditorÃ­a.
+     * Escucha eventos de auditoría de múltiples microservicios (Users, Catalog, Inventory, Suppliers).
+     * Todos los eventos se procesan de forma centralizada y se guardan en la base de datos de auditoría.
      */
     @RabbitListener(queues = {
             RabbitMQConfig.COLA_AUDITORIA_USERS,
@@ -27,7 +29,7 @@ public class AuditoriaListener {
     })
     public void recibirEventoAuditoria(AuditoriaEventoDTO evento) {
         System.out.println("\n[AUDIT] Nuevo evento recibido de: " + evento.getServicioOrigen());
-        System.out.println("AcciÃ³n: " + evento.getAccion() + " | Entidad ID: " + evento.getEntidadId());
+        System.out.println("Acción: " + evento.getAccion() + " | Entidad ID: " + evento.getEntidadId());
 
         try {
             LogAuditoria log = new LogAuditoria();
@@ -44,7 +46,7 @@ public class AuditoriaListener {
             log.setCantidad(evento.getCantidad());
             log.setStockResultante(evento.getStockResultante());
 
-            // LÃ³gica de respaldo para compatibilidad si los campos especÃ­ficos son nulos
+            // Logica de respaldo para compatibilidad si los campos especi­ficos son nulos
             if (log.getProductoId() == null && "CATALOG".equalsIgnoreCase(evento.getServicioOrigen())) {
                 log.setProductoId(evento.getEntidadId());
             } else if (log.getProductoId() == null && "INVENTORY".equalsIgnoreCase(evento.getServicioOrigen())) {
@@ -54,11 +56,11 @@ public class AuditoriaListener {
             }
 
             logRepository.save(log);
-            System.out.println("[AUDIT] Registro guardado con Ã©xito.");
+            System.out.println("[AUDIT] Registro guardado con exito.");
             
         } catch (Exception e) {
-            System.err.println("[AUDIT] Error al procesar evento de auditorÃ­a: " + e.getMessage());
-            // En un entorno real, aquÃ­ se enviarÃ­a a una DLQ o se registrarÃ­a el error
+            System.err.println("[AUDIT] Error al procesar evento de auditoría: " + e.getMessage());
+            // En un entorno real, aquí se enviaría a una DLQ o se registraría el error
         }
     }
 }

@@ -11,16 +11,24 @@ const api = {
         return headers;
     },
 
-    // Helper para procesar la respuesta
     async _handle(response) {
+        // Redirigir al login si da 401 (token expirado) pero SOLO si no estamos ya en la página de login
         if (response.status === 401) {
-            localStorage.clear();
-            window.location.href = 'index.html';
-            return;
+            const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+            if (!isLoginPage) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+                return;
+            }
         }
+        
         const text = await response.text();
         try {
-            return JSON.parse(text);
+            const data = JSON.parse(text);
+            if (typeof data === 'object' && data !== null) {
+                data.success = response.ok;
+            }
+            return data;
         } catch {
             return { message: text, success: response.ok };
         }
