@@ -29,7 +29,7 @@ launch_with_logs() {
 
 # 1. Eureka
 echo -e " \e[33m[1/8] Lanzando EUREKA-SERVER (Log: eureka-server.log)...\e[0m"
-launch_with_logs "$BACKEND_ROOT/eureka-server" "./mvnw spring-boot:run" "eureka-server"
+launch_with_logs "$BACKEND_ROOT/eureka-server" "./mvnw spring-boot:run -Dspring-boot.run.arguments='--server.port=8761'" "eureka-server"
 sleep 15
 
 # 2 & 3. Infra

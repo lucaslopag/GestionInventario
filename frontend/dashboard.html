@@ -119,33 +119,84 @@
                 }
             }
 
-            // --- Gráfico de Líneas (Actividad - Hardcoded por ahora hasta tener MS-Audit listo) ---
-            const ctxActivity = document.getElementById('activityChart').getContext('2d');
-            new Chart(ctxActivity, {
-                type: 'line',
-                data: {
-                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-                    datasets: [{
-                        label: 'Movimientos',
-                        data: [5, 10, 3, 8, 2, 6, 4],
-                        borderColor: '#00d2ff',
-                        backgroundColor: 'rgba(0, 210, 255, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#00d2ff',
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            // --- Gráfico de Líneas (Actividad Real de MS-Audit) ---
+            async function loadActivityChart() {
+                try {
+                    const auditResponse = await api.get('/auditoria?size=100');
+                    const logs = auditResponse.content || [];
+                    
+                    // Procesar actividad por día (últimos 7 días)
+                    const activityByDay = {};
+                    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                    const today = new Date();
+                    
+                    const labels = [];
+                    const data = [];
+
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(today.getDate() - i);
+                        const label = days[d.getDay()];
+                        labels.push(label);
+                        
+                        const count = logs.filter(log => {
+                            const logDate = new Date(log.fecha);
+                            return logDate.toDateString() === d.toDateString();
+                        }).length;
+                        data.push(count);
                     }
+
+                    const ctxActivity = document.getElementById('activityChart').getContext('2d');
+                    new Chart(ctxActivity, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Movimientos',
+                                data: data,
+                                borderColor: '#00d2ff',
+                                backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3,
+                                pointBackgroundColor: '#00d2ff',
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
+                                x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+
+                    // --- Cargar Actividad Reciente ---
+                    const recentActivityContainer = document.querySelector('.main-content > div:last-child');
+                    if (logs.length > 0) {
+                        let html = '<h3>Actividad Reciente</h3><div style="margin-top: 1rem;">';
+                        logs.slice(0, 5).forEach(log => {
+                            const date = new Date(log.fecha).toLocaleString();
+                            html += `
+                                <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <p style="font-weight: 500;">${log.accion}</p>
+                                        <p style="font-size: 0.85rem; color: var(--text-secondary);">${log.detalles || 'Sin detalles'}</p>
+                                    </div>
+                                    <p style="font-size: 0.8rem; color: var(--text-secondary);">${date}</p>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        recentActivityContainer.innerHTML = html;
+                    }
+
+                } catch (err) {
+                    console.error("Error cargando actividad:", err);
                 }
-            });
+            }
 
             // --- Gráfico de Barras (Categorías) ---
             let categoryChart;
@@ -177,6 +228,7 @@
 
             // Cargar todo
             await loadStats();
+            await loadActivityChart();
 
             // Inicializar iconos
             lucide.createIcons();

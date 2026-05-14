@@ -71,7 +71,7 @@ public class AuthService {
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .rol(request.getEmail() != null ? request.getEmail() : "EMPLEADO")
+                .rol(request.getRol() != null ? request.getRol().toUpperCase() : "EMPLEADO")
                 .confirmado(false)
                 .tokenConfirmacion(token)
                 .tokenExpira(LocalDateTime.now().plusHours(24))
