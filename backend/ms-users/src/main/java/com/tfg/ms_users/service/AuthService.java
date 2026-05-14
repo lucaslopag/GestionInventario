@@ -14,6 +14,8 @@ import com.tfg.ms_users.dto.LoginResponse;
 import com.tfg.ms_users.security.JwtService;
 import java.util.UUID;
 import java.time.LocalDateTime;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -47,9 +49,15 @@ public class AuthService {
     private String appBaseUrl;
 
     public String registrar(RegisterRequest request) {
-        // 1. Verificar si el email ya existe
+        // 1. Validar política de contraseña
+        String password = request.getPassword();
+        if (password == null || password.length() < 8 || !password.matches(".*\\d.*") || !password.matches(".*[a-zA-Z].*")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña debe tener al menos 8 caracteres, un dígito y una letra");
+        }
+
+        // 2. Verificar si el email ya existe
         if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("El email ya estÃƒÂ¡ registrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya está registrado");
         }
 
         // 2. Crear el nuevo usuario
@@ -113,17 +121,22 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         // 1. Buscar usuario por email
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Credenciales incorrectas"));
-
-        // 2. Verificar contraseÃƒÂ±a
-        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            throw new RuntimeException("Credenciales incorrectas");
+        Usuario usuario = usuarioRepository.findByEmail(request.getEmail()).orElse(null);
+        if (usuario == null) {
+            System.err.println("[LOGIN FALLIDO] Email no registrado: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
         }
 
-        // 3. Verificar si estÃƒÂ¡ confirmado
+        // 2. Verificar contraseña
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+            System.err.println("[LOGIN FALLIDO] Contraseña incorrecta para: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
+        }
+
+        // 3. Verificar si está confirmado
         if (!usuario.isConfirmado()) {
-            throw new RuntimeException("Debes confirmar tu cuenta antes de iniciar sesiÃƒÂ³n");
+            System.err.println("[LOGIN FALLIDO] Cuenta sin confirmar para: " + request.getEmail());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
         }
 
         // 4. Generar Token JWT

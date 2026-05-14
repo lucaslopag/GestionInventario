@@ -22,4 +22,12 @@ public class GlobalExceptionhandler {
 
         return new ResponseEntity<>(errores, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Conflicto de datos");
+        response.put("message", "El valor proporcionado ya existe y debe ser único (probablemente un SKU duplicado).");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 }
