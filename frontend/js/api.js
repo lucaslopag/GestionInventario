@@ -13,11 +13,13 @@ const api = {
 
     async _handle(response) {
         if (response.status === 401) {
-            localStorage.clear();
+            // Si no estamos en el login, limpiamos y redirigimos
             if (!window.location.pathname.endsWith('index.html')) {
+                localStorage.clear();
                 window.location.href = 'index.html';
+                return;
             }
-            return;
+            // Si estamos en el login, dejamos que fluya para mostrar el mensaje de error
         }
 
         const text = await response.text();
