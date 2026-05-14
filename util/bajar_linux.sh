@@ -38,9 +38,10 @@ fi
 # Actualizar remote con el token
 git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
 
-# Pull sin abrir editor (--no-edit evita que se abra vim)
+# Pull automático siempre priorizando lo local en caso de conflicto
 echo "[->] Descargando cambios..."
-if GIT_MERGE_AUTOEDIT=no git pull --no-edit origin "$BRANCH" 2>&1; then
+git config pull.rebase false
+if GIT_MERGE_AUTOEDIT=no git pull --no-edit -X ours origin "$BRANCH" 2>&1; then
   echo ""
   echo "======================================================"
   echo "   OK - ¡Cambios descargados correctamente!"
