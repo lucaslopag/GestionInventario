@@ -11,19 +11,30 @@ const api = {
         return headers;
     },
 
-    // Helper para procesar la respuesta
     async _handle(response) {
         if (response.status === 401) {
             localStorage.clear();
-            window.location.href = 'index.html';
+            if (!window.location.pathname.endsWith('index.html')) {
+                window.location.href = 'index.html';
+            }
             return;
         }
+
         const text = await response.text();
+        let data;
         try {
-            return JSON.parse(text);
+            data = JSON.parse(text);
         } catch {
-            return { message: text, success: response.ok };
+            data = { message: text };
         }
+
+        if (!response.ok) {
+            // Si el backend no devuelve un campo 'message', buscamos en 'error' o lanzamos el status
+            const errorMsg = data.message || data.error || `Error ${response.status}: ${response.statusText}`;
+            return { error: true, message: errorMsg, status: response.status };
+        }
+
+        return { ...data, success: true };
     },
 
     // POST

@@ -81,12 +81,45 @@
     <script src="js/auth.js"></script>
     <script>
         // --- Lógica de Dashboard ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const user = JSON.parse(localStorage.getItem('user')) || { nombre: 'Usuario', rol: 'ADMIN' };
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('user')) || { nombre: 'Usuario', rol: 'USUARIO' };
             document.getElementById('userName').textContent = user.nombre;
             document.getElementById('userRole').textContent = user.rol || 'USUARIO';
 
-            // --- Gráfico de Líneas (Actividad) ---
+            // --- Cargar Estadísticas Reales ---
+            async function loadStats() {
+                try {
+                    // 1. Total Productos (de MS-Catalog)
+                    const productos = await api.get('/productos');
+                    const totalProductos = Array.isArray(productos) ? productos.length : 0;
+                    document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = totalProductos;
+
+                    // 2. Stock Bajo (de MS-Inventory)
+                    const stock = await api.get('/inventario/stock');
+                    const stockBajo = Array.isArray(stock) ? stock.filter(s => s.cantidad < 10).length : 0;
+                    document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = stockBajo;
+
+                    // 3. Proveedores (de MS-Suppliers)
+                    const proveedores = await api.get('/proveedores');
+                    const totalProveedores = Array.isArray(proveedores) ? proveedores.length : 0;
+                    document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = totalProveedores;
+
+                    // --- Gráfico de Categorías (Real) ---
+                    if (Array.isArray(productos)) {
+                        const categorias = {};
+                        productos.forEach(p => {
+                            const cat = p.categoria || 'Sin Cat.';
+                            categorias[cat] = (categorias[cat] || 0) + 1;
+                        });
+                        updateCategoryChart(Object.keys(categorias), Object.values(categorias));
+                    }
+
+                } catch (err) {
+                    console.error("Error cargando estadísticas:", err);
+                }
+            }
+
+            // --- Gráfico de Líneas (Actividad - Hardcoded por ahora hasta tener MS-Audit listo) ---
             const ctxActivity = document.getElementById('activityChart').getContext('2d');
             new Chart(ctxActivity, {
                 type: 'line',
@@ -94,7 +127,7 @@
                     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [{
                         label: 'Movimientos',
-                        data: [12, 19, 3, 5, 2, 3, 10],
+                        data: [5, 10, 3, 8, 2, 6, 4],
                         borderColor: '#00d2ff',
                         backgroundColor: 'rgba(0, 210, 255, 0.1)',
                         fill: true,
@@ -115,37 +148,35 @@
             });
 
             // --- Gráfico de Barras (Categorías) ---
-            const ctxCategory = document.getElementById('categoryChart').getContext('2d');
-            new Chart(ctxCategory, {
-                type: 'bar',
-                data: {
-                    labels: ['Monit.', 'Perif.', 'Comp.', 'Otros'],
-                    datasets: [{
-                        label: 'Productos',
-                        data: [40, 25, 20, 15],
-                        backgroundColor: '#3a7bd5',
-                        borderRadius: 8,
-                        hoverBackgroundColor: '#00d2ff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
+            let categoryChart;
+            function updateCategoryChart(labels, data) {
+                const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+                if (categoryChart) categoryChart.destroy();
+                categoryChart = new Chart(ctxCategory, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.length > 0 ? labels : ['Sin Datos'],
+                        datasets: [{
+                            label: 'Productos',
+                            data: data.length > 0 ? data : [0],
+                            backgroundColor: '#3a7bd5',
+                            borderRadius: 8,
+                            hoverBackgroundColor: '#00d2ff'
+                        }]
                     },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: 'rgba(255,255,255,0.05)' }, 
-                            ticks: { color: '#94a3b8' } 
-                        },
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: '#94a3b8' } 
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                         }
                     }
-                }
-            });
+                });
+            }
+
+            // Cargar todo
+            await loadStats();
 
             // Inicializar iconos
             lucide.createIcons();

@@ -50,14 +50,14 @@
             try {
                 const response = await api.post('/auth/register', { nombre, email, password });
 
-                if (response.success || response.id) { // Dependiendo de qué devuelva tu backend
+                if (!response.error) {
                     alert.className = 'alert alert-success';
                     alert.textContent = '¡Registro con éxito! Revisa tu email para confirmar tu cuenta.';
                     alert.style.display = 'block';
                     document.getElementById('registerForm').reset();
                 } else {
                     alert.className = 'alert alert-error';
-                    alert.textContent = response.message || 'Error al registrar el usuario';
+                    alert.textContent = response.message;
                     alert.style.display = 'block';
                 }
             } catch (err) {
