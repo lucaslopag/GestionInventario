@@ -1,21 +1,26 @@
 package com.tfg.ms_users.service;
 
-import com.tfg.ms_users.dto.RegisterRequest;
-import com.tfg.ms_users.entity.Usuario;
-import com.tfg.ms_users.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.tfg.ms_users.config.RabbitMQConfig;
+import com.tfg.ms_users.dto.AuditoriaEventoDTO;
 import com.tfg.ms_users.dto.EmailMessage;
 import com.tfg.ms_users.dto.LoginRequest;
 import com.tfg.ms_users.dto.LoginResponse;
+import com.tfg.ms_users.dto.RegisterRequest;
+import com.tfg.ms_users.entity.Usuario;
+import com.tfg.ms_users.repository.UsuarioRepository;
 import com.tfg.ms_users.security.JwtService;
-import java.util.UUID;
-import java.time.LocalDateTime;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,10 +30,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RabbitTemplate rabbitTemplate;
     private final JwtService jwtService;
-    private final com.tfg.ms_users.config.RabbitMQConfig rabbitMQConfig;
 
     private void auditar(String accion, Long entidadId, String usuarioEmail, String detalles) {
-        com.tfg.ms_users.dto.AuditoriaEventoDTO evento = com.tfg.ms_users.dto.AuditoriaEventoDTO.builder()
+        AuditoriaEventoDTO evento = AuditoriaEventoDTO.builder()
                 .servicioOrigen("USERS")
                 .accion(accion)
                 .entidadId(entidadId)
@@ -37,8 +41,8 @@ public class AuthService {
                 .detalles(detalles)
                 .build();
         rabbitTemplate.convertAndSend(
-                com.tfg.ms_users.config.RabbitMQConfig.EXCHANGE_AUDITORIA,
-                com.tfg.ms_users.config.RabbitMQConfig.ROUTING_KEY_AUDITORIA,
+                RabbitMQConfig.EXCHANGE_AUDITORIA,
+                RabbitMQConfig.ROUTING_KEY_AUDITORIA,
                 evento);
     }
 
@@ -49,24 +53,25 @@ public class AuthService {
     private String appBaseUrl;
 
     public String registrar(RegisterRequest request) {
-        // 1. Validar política de contraseña
+        // 1. Validar política de contraseña (mínimo 8 caracteres, letras y números)
         String password = request.getPassword();
-        if (password == null || password.length() < 8 || !password.matches(".*\\d.*") || !password.matches(".*[a-zA-Z].*")) {
+        String passwordRegex = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$";
+        
+        if (password == null || !password.matches(passwordRegex)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña debe tener al menos 8 caracteres, un dígito y una letra");
         }
 
         // 2. Verificar si el email ya existe
         if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya está registrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya esta registrado");
         }
 
-        // 2. Crear el nuevo usuario
         String token = UUID.randomUUID().toString();
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .rol("ROLE_USER")
+                .rol(request.getEmail() != null ? request.getEmail() : "EMPLEADO")
                 .confirmado(false)
                 .tokenConfirmacion(token)
                 .tokenExpira(LocalDateTime.now().plusHours(24))
@@ -80,7 +85,7 @@ public class AuthService {
         // 3. Enviar mensaje a RabbitMQ para mandar email
         enviarEmailConfirmacion(usuario);
 
-        return "Usuario registrado con ÃƒÂ©xito. Revisa tu email para confirmar la cuenta.";
+        return "Usuario registrado con exito. Revisa tu email para confirmar la cuenta.";
     }
 
     private void enviarEmailConfirmacion(Usuario usuario) {
@@ -92,7 +97,7 @@ public class AuthService {
                 .body("Hola " + usuario.getNombre() + ",\n\n" +
                         "Por favor, confirma tu cuenta haciendo clic en el siguiente enlace:\n" +
                         urlConfirmacion + "\n\n" +
-                        "Este enlace expirarÃƒÂ¡ en 24 horas.")
+                        "Este enlace expirara en 24 horas.")
                 .build();
 
         rabbitTemplate.convertAndSend(mailQueue, email);
@@ -102,11 +107,11 @@ public class AuthService {
     public String confirmar(String token) {
         // 1. Buscar el usuario por el token
         Usuario usuario = usuarioRepository.findByTokenConfirmacion(token)
-                .orElseThrow(() -> new RuntimeException("Token de confirmaciÃƒÂ³n no vÃƒÂ¡lido"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Token de confirmacion no valido"));
 
         // 2. Verificar si el token ha expirado
         if (usuario.getTokenExpira().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El enlace de confirmaciÃƒÂ³n ha expirado");
+            throw new ResponseStatusException(HttpStatus.GONE, "El enlace de confirmacion ha expirado");
         }
 
         // 3. Confirmar la cuenta y limpiar el token
@@ -116,34 +121,31 @@ public class AuthService {
 
         usuarioRepository.save(usuario);
 
-        return "Cuenta confirmada con ÃƒÂ©xito. Ya puedes iniciar sesiÃƒÂ³n.";
+        return "Cuenta confirmada con exito. Ya puedes iniciar sesion.";
     }
 
     public LoginResponse login(LoginRequest request) {
         // 1. Buscar usuario por email
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail()).orElse(null);
         if (usuario == null) {
-            System.err.println("[LOGIN FALLIDO] Email no registrado: " + request.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales invalidas o cuenta no confirmada");
         }
 
         // 2. Verificar contraseña
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            System.err.println("[LOGIN FALLIDO] Contraseña incorrecta para: " + request.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales invalidas o cuenta no confirmada");
         }
 
         // 3. Verificar si está confirmado
         if (!usuario.isConfirmado()) {
-            System.err.println("[LOGIN FALLIDO] Cuenta sin confirmar para: " + request.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas o cuenta no confirmada");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales invalidas o cuenta no confirmada");
         }
 
         // 4. Generar Token JWT
         String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol());
 
         // Auditar login
-        auditar("LOGIN", usuario.getId(), usuario.getEmail(), "Inicio de sesiÃƒÂ³n exitoso");
+        auditar("LOGIN", usuario.getId(), usuario.getEmail(), "Inicio de sesion exitoso");
 
         return LoginResponse.builder()
                 .token(token)
@@ -155,6 +157,6 @@ public class AuthService {
 
     public Usuario getMe(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 }
