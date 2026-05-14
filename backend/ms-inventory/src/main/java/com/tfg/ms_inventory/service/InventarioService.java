@@ -96,6 +96,13 @@ public class InventarioService {
         return mapToStockDTO(stock);
     }
 
+    public java.util.List<StockDTO> consultarTodosLosStocks(String usuarioEmail) {
+        auditar("GET_ALL_STOCK", null, usuarioEmail, "Consulta de todo el stock", null, null, null, null);
+        return stockRepository.findAll().stream()
+                .map(this::mapToStockDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public java.util.List<MovimientoDTO> obtenerMovimientos(String usuarioEmail) {
         auditar("GET_MOVIMIENTOS", null, usuarioEmail, "Consulta de todos los movimientos", null, null, null, null);
         return movimientoRepository.findAll().stream()

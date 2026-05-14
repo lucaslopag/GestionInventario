@@ -54,6 +54,13 @@ public class InventarioController {
         return ResponseEntity.ok(stock);
     }
 
+    @GetMapping("/stock")
+    public ResponseEntity<List<StockDTO>> consultarTodosLosStocks(
+            @RequestHeader("X-User-Email") String usuarioEmail) {
+        
+        return ResponseEntity.ok(inventarioService.consultarTodosLosStocks(usuarioEmail));
+    }
+
     @GetMapping("/movimientos")
     public ResponseEntity<List<MovimientoDTO>> obtenerHistorialMovimientos(
             @RequestHeader("X-User-Email") String usuarioEmail) {
