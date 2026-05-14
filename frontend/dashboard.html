@@ -5,28 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Lucide se carga primero para que los iconos estén disponibles de inmediato -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body style="display: block;"> <!-- Sobrescribimos el flex del body original -->
+<body style="display: block;">
 
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">
-                <span class="brand">Inventary</span>
-            </h1>
-            
-            <nav>
+            <!-- Perfil de usuario (arriba a la izquierda) -->
+            <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
+
+            <nav style="margin-top: 1.5rem;">
                 <a href="dashboard.html" class="nav-link active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
                 <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="users"></i> Proveedores</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
                 <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
                 <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
+                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
             </nav>
-
-            <div style="margin-top: auto;">
-                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--error);"><i data-lucide="log-out"></i> Cerrar Sesión</a>
-            </div>
         </aside>
 
         <!-- Main Content -->
@@ -37,7 +34,7 @@
                     <p style="color: var(--text-secondary);">Bienvenido de nuevo, <span id="userName" style="color: white;">Usuario</span></p>
                 </div>
                 <div style="background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid var(--border);">
-                    <span id="userRole" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">ADMIN</span>
+                    <span id="userRole" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">USUARIO</span>
                 </div>
             </header>
 
@@ -45,15 +42,15 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">Total Productos</p>
-                    <p class="stat-value">124</p>
+                    <p class="stat-value" id="statProductos">—</p>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Stock Bajo</p>
-                    <p class="stat-value" style="color: var(--error);">8</p>
+                    <p class="stat-value" id="statStockBajo" style="color: var(--error);">—</p>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Proveedores</p>
-                    <p class="stat-value">12</p>
+                    <p class="stat-value" id="statProveedores">—</p>
                 </div>
             </div>
 
@@ -69,9 +66,10 @@
                 </div>
             </div>
 
-            <div style="margin-top: 3rem; background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid var(--border);">
+            <!-- Actividad Reciente -->
+            <div id="recentActivity" style="margin-top: 3rem; background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid var(--border);">
                 <h3>Actividad Reciente</h3>
-                <p style="color: var(--text-secondary); margin-top: 1rem;">Conecta con el MS-Audit para ver los últimos movimientos.</p>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Cargando actividad reciente...</p>
             </div>
         </main>
     </div>
@@ -79,158 +77,142 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
     <script>
-        // --- Lógica de Dashboard ---
+        // Inicializar iconos INMEDIATAMENTE — antes de cualquier llamada async
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
         document.addEventListener('DOMContentLoaded', async () => {
             const user = JSON.parse(localStorage.getItem('user')) || { nombre: 'Usuario', rol: 'USUARIO' };
             document.getElementById('userName').textContent = user.nombre;
-            document.getElementById('userRole').textContent = user.rol || 'USUARIO';
+            document.getElementById('userRole').textContent = (user.rol || 'USUARIO').toUpperCase();
 
-            // --- Cargar Estadísticas Reales ---
-            async function loadStats() {
-                try {
-                    // 1. Total Productos (de MS-Catalog)
-                    const productos = await api.get('/productos');
-                    const totalProductos = Array.isArray(productos) ? productos.length : 0;
-                    document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = totalProductos;
+            // Gráficos inicializados con datos vacíos para que la UI no salte
+            const ctxActivity = document.getElementById('activityChart').getContext('2d');
+            const ctxCategory = document.getElementById('categoryChart').getContext('2d');
 
-                    // 2. Stock Bajo (de MS-Inventory)
-                    const stock = await api.get('/inventario/stock');
-                    const stockBajo = Array.isArray(stock) ? stock.filter(s => s.cantidad < 10).length : 0;
-                    document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = stockBajo;
-
-                    // 3. Proveedores (de MS-Suppliers)
-                    const proveedores = await api.get('/proveedores');
-                    const totalProveedores = Array.isArray(proveedores) ? proveedores.length : 0;
-                    document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = totalProveedores;
-
-                    // --- Gráfico de Categorías (Real) ---
-                    if (Array.isArray(productos)) {
-                        const categorias = {};
-                        productos.forEach(p => {
-                            const cat = p.categoria || 'Sin Cat.';
-                            categorias[cat] = (categorias[cat] || 0) + 1;
-                        });
-                        updateCategoryChart(Object.keys(categorias), Object.values(categorias));
-                    }
-
-                } catch (err) {
-                    console.error("Error cargando estadísticas:", err);
-                }
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const labels7 = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(); d.setDate(today.getDate() - i);
+                labels7.push(days[d.getDay()]);
             }
 
-            // --- Gráfico de Líneas (Actividad Real de MS-Audit) ---
-            async function loadActivityChart() {
-                try {
-                    const auditResponse = await api.get('/auditoria?size=100');
-                    const logs = auditResponse.content || [];
-                    
-                    // Procesar actividad por día (últimos 7 días)
-                    const activityByDay = {};
-                    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-                    const today = new Date();
-                    
-                    const labels = [];
-                    const data = [];
-
-                    for (let i = 6; i >= 0; i--) {
-                        const d = new Date();
-                        d.setDate(today.getDate() - i);
-                        const label = days[d.getDay()];
-                        labels.push(label);
-                        
-                        const count = logs.filter(log => {
-                            const logDate = new Date(log.fecha);
-                            return logDate.toDateString() === d.toDateString();
-                        }).length;
-                        data.push(count);
+            const activityChart = new Chart(ctxActivity, {
+                type: 'line',
+                data: {
+                    labels: labels7,
+                    datasets: [{ label: 'Movimientos', data: [0,0,0,0,0,0,0], borderColor: '#00d2ff', backgroundColor: 'rgba(0,210,255,0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: '#00d2ff', pointRadius: 5 }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
-
-                    const ctxActivity = document.getElementById('activityChart').getContext('2d');
-                    new Chart(ctxActivity, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Movimientos',
-                                data: data,
-                                borderColor: '#00d2ff',
-                                backgroundColor: 'rgba(0, 210, 255, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                borderWidth: 3,
-                                pointBackgroundColor: '#00d2ff',
-                                pointRadius: 5
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
-                                x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                            }
-                        }
-                    });
-
-                    // --- Cargar Actividad Reciente ---
-                    const recentActivityContainer = document.querySelector('.main-content > div:last-child');
-                    if (logs.length > 0) {
-                        let html = '<h3>Actividad Reciente</h3><div style="margin-top: 1rem;">';
-                        logs.slice(0, 5).forEach(log => {
-                            const date = new Date(log.fecha).toLocaleString();
-                            html += `
-                                <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <p style="font-weight: 500;">${log.accion}</p>
-                                        <p style="font-size: 0.85rem; color: var(--text-secondary);">${log.detalles || 'Sin detalles'}</p>
-                                    </div>
-                                    <p style="font-size: 0.8rem; color: var(--text-secondary);">${date}</p>
-                                </div>
-                            `;
-                        });
-                        html += '</div>';
-                        recentActivityContainer.innerHTML = html;
-                    }
-
-                } catch (err) {
-                    console.error("Error cargando actividad:", err);
                 }
+            });
+
+            const categoryChart = new Chart(ctxCategory, {
+                type: 'bar',
+                data: {
+                    labels: ['Sin datos'],
+                    datasets: [{ label: 'Productos', data: [0], backgroundColor: '#3a7bd5', borderRadius: 8, hoverBackgroundColor: '#00d2ff' }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Cargar todo EN PARALELO para máxima velocidad
+            const [productosRes, stockRes, proveedoresRes, auditRes] = await Promise.allSettled([
+                api.get('/productos'),
+                api.get('/inventario/stock'),
+                api.get('/proveedores'),
+                api.get('/auditoria?size=100')
+            ]);
+
+            // Stats: Productos
+            if (productosRes.status === 'fulfilled' && !productosRes.value.error) {
+                const productos = Array.isArray(productosRes.value) ? productosRes.value : (productosRes.value.content ?? []);
+                document.getElementById('statProductos').textContent = productos.length;
+
+                // Gráfico de categorías
+                if (productos.length > 0) {
+                    const categorias = {};
+                    productos.forEach(p => { const c = p.categoria || 'Sin Cat.'; categorias[c] = (categorias[c] || 0) + 1; });
+                    categoryChart.data.labels = Object.keys(categorias);
+                    categoryChart.data.datasets[0].data = Object.values(categorias);
+                    categoryChart.update();
+                }
+            } else {
+                document.getElementById('statProductos').textContent = '—';
             }
 
-            // --- Gráfico de Barras (Categorías) ---
-            let categoryChart;
-            function updateCategoryChart(labels, data) {
-                const ctxCategory = document.getElementById('categoryChart').getContext('2d');
-                if (categoryChart) categoryChart.destroy();
-                categoryChart = new Chart(ctxCategory, {
-                    type: 'bar',
-                    data: {
-                        labels: labels.length > 0 ? labels : ['Sin Datos'],
-                        datasets: [{
-                            label: 'Productos',
-                            data: data.length > 0 ? data : [0],
-                            backgroundColor: '#3a7bd5',
-                            borderRadius: 8,
-                            hoverBackgroundColor: '#00d2ff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                        }
-                    }
+            // Stats: Stock Bajo
+            if (stockRes.status === 'fulfilled' && !stockRes.value.error) {
+                const stock = Array.isArray(stockRes.value) ? stockRes.value : (stockRes.value.content ?? []);
+                const bajo = stock.filter(s => (s.cantidadDisponible ?? s.cantidad ?? 0) < 10).length;
+                document.getElementById('statStockBajo').textContent = bajo;
+            } else {
+                document.getElementById('statStockBajo').textContent = '—';
+            }
+
+            // Stats: Proveedores
+            if (proveedoresRes.status === 'fulfilled' && !proveedoresRes.value.error) {
+                const prov = Array.isArray(proveedoresRes.value) ? proveedoresRes.value : (proveedoresRes.value.content ?? []);
+                document.getElementById('statProveedores').textContent = prov.length;
+            } else {
+                document.getElementById('statProveedores').textContent = '—';
+            }
+
+            // Actividad y gráfico de líneas
+            if (auditRes.status === 'fulfilled' && !auditRes.value.error) {
+                const logs = auditRes.value.content ?? (Array.isArray(auditRes.value) ? auditRes.value : []);
+
+                // Actualizar gráfico de actividad con datos reales
+                const actData = labels7.map((_, i) => {
+                    const d = new Date(); d.setDate(today.getDate() - (6 - i));
+                    return logs.filter(log => new Date(log.fecha).toDateString() === d.toDateString()).length;
                 });
+                activityChart.data.datasets[0].data = actData;
+                activityChart.update();
+
+                // Actividad reciente
+                const recentEl = document.getElementById('recentActivity');
+                if (logs.length > 0) {
+                    let html = '<h3>Actividad Reciente</h3><div style="margin-top: 1rem;">';
+                    logs.slice(0, 5).forEach(log => {
+                        const date = new Date(log.fecha).toLocaleString('es-ES');
+                        const accion = log.accion || log.tipo || '—';
+                        const badgeClass = accion.includes('ENTRADA') ? 'badge-stock' : accion.includes('SALIDA') ? 'badge-danger' : 'badge-warning';
+                        html += `
+                            <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                                <div style="display:flex; align-items:center; gap:1rem;">
+                                    <span class="badge ${badgeClass}">${accion}</span>
+                                    <p style="font-size: 0.85rem; color: var(--text-secondary);">${log.detalles || log.usuarioEmail || 'Sin detalles'}</p>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">${date}</p>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    recentEl.innerHTML = html;
+                } else {
+                    document.getElementById('recentActivity').innerHTML = '<h3>Actividad Reciente</h3><p style="color: var(--text-secondary); margin-top: 1rem;">No hay actividad registrada aún.</p>';
+                }
             }
 
-            // Cargar todo
-            await loadStats();
-            await loadActivityChart();
-
-            // Inicializar iconos
+            // Re-renderizar iconos tras sidebar.js
             lucide.createIcons();
         });
     </script>

@@ -5,6 +5,7 @@ import com.tfg.ms_users.dto.LoginResponse;
 import com.tfg.ms_users.dto.RegisterRequest;
 import com.tfg.ms_users.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
@@ -25,13 +29,13 @@ public class AuthController {
         try {
             authService.confirmar(token);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                    .location(java.net.URI.create("/confirmacion.html?status=ok"))
+                    .location(java.net.URI.create(frontendUrl + "/confirmacion.html?status=ok"))
                     .build();
         } catch (Exception e) {
             String reason = "error";
-            if (e.getMessage().contains("expirado")) reason = "expired";
+            if (e.getMessage() != null && e.getMessage().contains("expirado")) reason = "expired";
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                    .location(java.net.URI.create("/confirmacion.html?status=error&reason=" + reason))
+                    .location(java.net.URI.create(frontendUrl + "/confirmacion.html?status=error&reason=" + reason))
                     .build();
         }
     }

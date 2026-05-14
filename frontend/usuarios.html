@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios | Sistema de Inventario</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="display: block;">
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
+            <nav style="margin-top: 1.5rem;">
+                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
+                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
+                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
+                <a href="usuarios.html" class="nav-link active" id="navUsuarios"><i data-lucide="users"></i> Usuarios</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 2rem;">
+                <h2>Gestión de Usuarios</h2>
+                <p style="color: var(--text-secondary);">Administra cuentas de usuario y roles del sistema.</p>
+            </header>
+
+            <!-- Acceso solo ADMIN -->
+            <div id="adminGate" style="display:none; background: rgba(255,75,92,0.08); border: 1px solid rgba(255,75,92,0.25); border-radius: 20px; padding: 2rem; text-align:center; margin-bottom:2rem;">
+                <i data-lucide="lock" style="width:40px; height:40px; color:var(--error); margin-bottom:1rem;"></i>
+                <h3 style="color:var(--error);">Acceso Restringido</h3>
+                <p style="color:var(--text-secondary); margin-top:0.5rem;">Esta sección requiere el rol <strong>ADMIN</strong>.</p>
+            </div>
+
+            <div id="adminContent" style="display:none;">
+                <!-- Filtros + Nuevo usuario -->
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre o email...">
+                    </div>
+                    <select id="filterRol" class="filter-select">
+                        <option value="">Todos los roles</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="EMPLEADO">EMPLEADO</option>
+                    </select>
+                    <select id="filterEstado" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="confirmado">Confirmados</option>
+                        <option value="pendiente">Pendientes</option>
+                    </select>
+                    <button class="btn-add" id="openCreateModalBtn" style="white-space:nowrap;">+ Nuevo Usuario</button>
+                </div>
+
+                <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+
+                <!-- Tabla de usuarios -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Nuevo Usuario -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Crear Nuevo Usuario</h3>
+                <button class="close-modal" id="closeCreateModal">&times;</button>
+            </div>
+            <div id="createMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <form id="createUserForm">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="newNombre" required placeholder="Ej. Ana García">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="newEmail" required placeholder="usuario@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="newPassword" required placeholder="Mínimo 8 caracteres, letras y números">
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="newRol" style="width:100%; padding:1rem 1.2rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:14px; color:white; font-size:1rem;">
+                        <option value="EMPLEADO">EMPLEADO</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <button type="submit">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Cambiar Rol -->
+    <div class="modal-overlay" id="rolModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Cambiar Rol</h3>
+                <button class="close-modal" id="closeRolModal">&times;</button>
+            </div>
+            <div id="rolMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <p id="rolModalDesc" style="color:var(--text-secondary); margin-bottom:1.5rem;"></p>
+            <div class="form-group">
+                <label>Nuevo Rol</label>
+                <select id="nuevoRolSelect" style="width:100%; padding:1rem 1.2rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:14px; color:white; font-size:1rem;">
+                    <option value="EMPLEADO">EMPLEADO</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+            <input type="hidden" id="rolTargetId">
+            <button id="confirmarRolBtn" style="margin-top:1rem;">Confirmar Cambio</button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script>
+        lucide.createIcons();
+
+        let allUsers = [];
+        const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+        const isAdmin = (currentUser.rol || '').toUpperCase() === 'ADMIN';
+
+        // Expuestas globalmente para que onclick y eval funcionen
+        function getFiltered() {
+            const term   = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const rol    = (document.getElementById('filterRol')?.value || '').toUpperCase();
+            const estado = document.getElementById('filterEstado')?.value || '';
+            return allUsers.filter(u => {
+                const matchTerm   = !term   || u.nombre.toLowerCase().includes(term) || u.email.toLowerCase().includes(term);
+                const matchRol    = !rol    || (u.rol || '').toUpperCase() === rol;
+                const matchEstado = !estado || (estado === 'confirmado' ? u.confirmado : !u.confirmado);
+                return matchTerm && matchRol && matchEstado;
+            });
+        }
+
+        function renderUsers(data) {
+            const usersBody = document.getElementById('usersBody');
+            usersBody.innerHTML = '';
+            document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${allUsers.length} usuarios`;
+            if (data.length === 0) {
+                usersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary); padding:2rem;">No se encontraron usuarios.</td></tr>';
+                return;
+            }
+            data.forEach(u => {
+                const rolClass    = u.rol === 'ADMIN' ? 'badge-danger' : 'badge-stock';
+                const estadoClass = u.confirmado ? 'badge-stock' : 'badge-warning';
+                const estadoText  = u.confirmado ? 'Activo' : 'Pendiente';
+                const fecha  = u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleDateString('es-ES') : '—';
+                const isSelf = u.email === currentUser.email;
+                usersBody.innerHTML += `
+                    <tr>
+                        <td>#${u.id}</td>
+                        <td style="font-weight:600;">${u.nombre} ${isSelf ? '<span class="badge badge-info" style="font-size:0.65rem;">Tú</span>' : ''}</td>
+                        <td style="color:var(--accent); font-size:0.9rem;">${u.email}</td>
+                        <td><span class="badge ${rolClass}">${u.rol || 'EMPLEADO'}</span></td>
+                        <td><span class="badge ${estadoClass}">${estadoText}</span></td>
+                        <td style="color:var(--text-secondary); font-size:0.85rem;">${fecha}</td>
+                        <td style="display:flex; gap:0.5rem;">
+                            <button onclick="openRolModal(${u.id}, '${u.nombre}', '${u.rol}')" class="btn-icon btn-edit" title="Cambiar Rol"><i data-lucide="shield"></i></button>
+                            ${!isSelf ? `<button onclick="deleteUser(${u.id}, '${u.nombre}')" class="btn-icon btn-danger" title="Eliminar"><i data-lucide="trash-2"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function applyFilters() { renderUsers(getFiltered()); }
+
+        // Mostrar u ocultar contenido según rol
+        if (!isAdmin) {
+            document.getElementById('adminGate').style.display = 'block';
+            lucide.createIcons();
+        } else {
+            document.getElementById('adminContent').style.display = 'block';
+            initAdminPanel();
+        }
+
+        function initAdminPanel() {
+            const createModal = document.getElementById('createModal');
+            const rolModal    = document.getElementById('rolModal');
+
+            async function loadUsers() {
+                usersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-secondary);">Cargando usuarios...</td></tr>';
+                const res = await api.get('/usuarios');
+                if (res.error) {
+                    usersBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--error); padding:2rem;">${res.message}</td></tr>`;
+                    return;
+                }
+                allUsers = Array.isArray(res) ? res : (res.content ?? []);
+                renderUsers(allUsers);
+            }
+
+            window.openRolModal = (id, nombre, rolActual) => {
+                document.getElementById('rolTargetId').value = id;
+                document.getElementById('rolModalDesc').textContent = `Usuario: ${nombre}`;
+                document.getElementById('nuevoRolSelect').value = rolActual || 'EMPLEADO';
+                document.getElementById('rolMsg').style.display = 'none';
+                rolModal.style.display = 'flex';
+            };
+
+            window.deleteUser = async (id, nombre) => {
+                if (!confirm(`¿Seguro que quieres eliminar al usuario "${nombre}"? Esta acción no se puede deshacer.`)) return;
+                const res = await api.delete(`/usuarios/${id}`);
+                if (res.error) { alert(res.message); return; }
+                await loadUsers();
+            };
+
+            document.getElementById('confirmarRolBtn').onclick = async () => {
+                const id  = document.getElementById('rolTargetId').value;
+                const rol = document.getElementById('nuevoRolSelect').value;
+                const rolMsg = document.getElementById('rolMsg');
+                const res = await api.put(`/usuarios/${id}/rol`, { rol });
+                if (res.error) {
+                    rolMsg.textContent = res.message;
+                    rolMsg.className = 'alert alert-error';
+                    rolMsg.style.display = 'block';
+                    return;
+                }
+                rolModal.style.display = 'none';
+                await loadUsers();
+            };
+
+            // Modal crear usuario
+            document.getElementById('openCreateModalBtn').onclick = () => {
+                document.getElementById('createMsg').style.display = 'none';
+                document.getElementById('createUserForm').reset();
+                createModal.style.display = 'flex';
+            };
+            document.getElementById('closeCreateModal').onclick = () => createModal.style.display = 'none';
+            document.getElementById('closeRolModal').onclick  = () => rolModal.style.display  = 'none';
+            window.addEventListener('click', e => {
+                if (e.target === createModal) createModal.style.display = 'none';
+                if (e.target === rolModal)    rolModal.style.display    = 'none';
+            });
+
+            document.getElementById('createUserForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const createMsg = document.getElementById('createMsg');
+                const body = {
+                    nombre:   document.getElementById('newNombre').value,
+                    email:    document.getElementById('newEmail').value,
+                    password: document.getElementById('newPassword').value,
+                    rol:      document.getElementById('newRol').value
+                };
+                const res = await api.post('/auth/register', body);
+                if (res.error) {
+                    createMsg.textContent = res.message;
+                    createMsg.className = 'alert alert-error';
+                    createMsg.style.display = 'block';
+                    return;
+                }
+                createModal.style.display = 'none';
+                // Si el nuevo usuario tiene rol ADMIN, confirmamos automáticamente vía un mensaje informativo
+                if (body.rol === 'ADMIN') {
+                    alert(`Usuario creado. Se ha enviado un email de confirmación a ${body.email}. Una vez confirmado, tendrá acceso con rol ADMIN.`);
+                }
+                await loadUsers();
+            };
+
+            searchInput.addEventListener('input', applyFilters);
+            filterRol.addEventListener('change', applyFilters);
+            filterEstado.addEventListener('change', applyFilters);
+
+            loadUsers();
+        }
+    </script>
+</body>
+</html>

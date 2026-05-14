@@ -43,3 +43,6 @@ eureka:
 jwt:
   secret: ${JWT_SECRET:e5355151e2589d2b316e10af29ba6463e6fbcc836cd626cad9715541109ad707fdbfce4f0176a19235956075714b9c0937e882ce08c8885584d42705c0ebaab7}
   expiration: ${JWT_EXPIRATION_MS:3600000}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5500}

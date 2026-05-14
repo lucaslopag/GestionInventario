@@ -10,48 +10,80 @@
 <body style="display: block;">
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
-            <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">
-                <span class="brand">Inventary</span>
-            </h1>
-            
-            <nav>
+            <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
+            <nav style="margin-top: 1.5rem;">
                 <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
                 <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="users"></i> Proveedores</a>
+                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
                 <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
                 <a href="historial.html" class="nav-link active"><i data-lucide="history"></i> Historial</a>
+                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
             </nav>
-
-            <div style="margin-top: auto;">
-                <a href="index.html" class="nav-link" style="color: var(--error);"><i data-lucide="log-out"></i> Cerrar Sesión</a>
-            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <header style="margin-bottom: 3rem;">
-                <h2>Historial de Actividad</h2>
-                <p style="color: var(--text-secondary);">Registro detallado de todos los movimientos y cambios en el sistema.</p>
+            <header style="margin-bottom: 2rem;">
+                <h2>Historial de Auditoría</h2>
+                <p style="color: var(--text-secondary);">Registro completo de todos los eventos y cambios del sistema.</p>
             </header>
 
-            <!-- Filtros -->
-            <div class="controls-row">
+            <!-- Filtros principales -->
+            <div class="filters-bar">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Filtrar por producto o acción...">
+                    <input type="text" id="searchInput" placeholder="Buscar por usuario, producto o detalle...">
                 </div>
-                <div style="display: flex; gap: 1rem;">
-                    <select id="typeFilter" style="background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 0.8rem; border-radius: 12px; outline: none; cursor: pointer;">
-                        <option value="ALL">Todos los tipos</option>
-                        <option value="IN">Entradas</option>
-                        <option value="OUT">Salidas</option>
-                        <option value="CREATE">Creaciones</option>
-                    </select>
+                <select id="filterAccion" class="filter-select">
+                    <option value="">Todas las acciones</option>
+                    <option value="ENTRADA">Entradas</option>
+                    <option value="SALIDA">Salidas</option>
+                    <option value="CREAR">Creaciones</option>
+                    <option value="ACTUALIZAR">Actualizaciones</option>
+                    <option value="ELIMINAR">Eliminaciones</option>
+                    <option value="LOGIN">Logins</option>
+                    <option value="REGISTRO">Registros</option>
+                </select>
+                <select id="filterServicio" class="filter-select">
+                    <option value="">Todos los servicios</option>
+                    <option value="INVENTORY">Inventario</option>
+                    <option value="CATALOG">Catálogo</option>
+                    <option value="SUPPLIERS">Proveedores</option>
+                    <option value="USERS">Usuarios</option>
+                </select>
+            </div>
+
+            <!-- Filtros secundarios: fechas y usuario -->
+            <div class="filters-bar" style="margin-top: -0.5rem;">
+                <div class="form-group" style="margin:0; display:flex; align-items:center; gap:0.5rem;">
+                    <label style="margin:0; white-space:nowrap; color:var(--text-secondary); font-size:0.85rem;">Desde</label>
+                    <input type="date" id="filterDesde" class="filter-input-date">
+                </div>
+                <div class="form-group" style="margin:0; display:flex; align-items:center; gap:0.5rem;">
+                    <label style="margin:0; white-space:nowrap; color:var(--text-secondary); font-size:0.85rem;">Hasta</label>
+                    <input type="date" id="filterHasta" class="filter-input-date">
+                </div>
+                <div class="search-box" style="max-width:240px;">
+                    <input type="text" id="filterUsuario" placeholder="Filtrar por email de usuario...">
+                </div>
+                <button id="btnLimpiarFiltros" class="btn-secondary" style="white-space:nowrap;">
+                    <i data-lucide="x"></i> Limpiar filtros
+                </button>
+                <button id="btnRecargar" class="btn-secondary" style="white-space:nowrap;">
+                    <i data-lucide="refresh-cw"></i> Recargar
+                </button>
+            </div>
+
+            <!-- Info de resultados + paginación -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+                <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem;"></p>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <button id="btnPrevPage" class="btn-page" disabled><i data-lucide="chevron-left"></i></button>
+                    <span id="pageInfo" style="color:var(--text-secondary); font-size:0.85rem; padding:0 0.5rem;"></span>
+                    <button id="btnNextPage" class="btn-page"><i data-lucide="chevron-right"></i></button>
                 </div>
             </div>
 
-            <!-- Tabla de Historial -->
+            <!-- Tabla -->
             <div class="table-container">
                 <table>
                     <thead>
@@ -59,14 +91,13 @@
                             <th>Fecha y Hora</th>
                             <th>Usuario</th>
                             <th>Acción</th>
-                            <th>Producto / Entidad</th>
+                            <th>Servicio</th>
+                            <th>Entidad / Producto</th>
                             <th>Cantidad</th>
-                            <th>Motivo</th>
+                            <th>Detalle</th>
                         </tr>
                     </thead>
-                    <tbody id="historyBody">
-                        <!-- Se llenará con JS -->
-                    </tbody>
+                    <tbody id="historyBody"></tbody>
                 </table>
             </div>
         </main>
@@ -74,86 +105,138 @@
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
     <script>
+        lucide.createIcons();
+
         let allHistory = [];
+        let currentPage = 0;
+        const PAGE_SIZE = 20;
 
-        const historyBody = document.getElementById('historyBody');
-        const searchInput = document.getElementById('searchInput');
-        const typeFilter = document.getElementById('typeFilter');
+        const historyBody    = document.getElementById('historyBody');
+        const searchInput    = document.getElementById('searchInput');
+        const filterAccion   = document.getElementById('filterAccion');
+        const filterServicio = document.getElementById('filterServicio');
+        const filterDesde    = document.getElementById('filterDesde');
+        const filterHasta    = document.getElementById('filterHasta');
+        const filterUsuario  = document.getElementById('filterUsuario');
 
-        function renderHistory(data) {
+        function getFiltered() {
+            const term     = searchInput.value.toLowerCase();
+            const accion   = filterAccion.value.toUpperCase();
+            const servicio = filterServicio.value.toUpperCase();
+            const usuario  = filterUsuario.value.toLowerCase();
+            const desde    = filterDesde.value ? new Date(filterDesde.value) : null;
+            const hasta    = filterHasta.value ? new Date(filterHasta.value + 'T23:59:59') : null;
+
+            return allHistory.filter(h => {
+                const accionVal   = (h.accion ?? h.tipo ?? '').toUpperCase();
+                const servicioVal = (h.servicioOrigen ?? '').toUpperCase();
+                const usuarioVal  = (h.usuarioEmail ?? '').toLowerCase();
+                const entidad     = (h.nombreProducto ?? h.detalles ?? `#${h.entidadId ?? h.productoId ?? ''}` ?? '').toLowerCase();
+                const fecha       = h.fecha ? new Date(h.fecha) : null;
+
+                const matchTerm     = !term     || usuarioVal.includes(term) || entidad.includes(term) || accionVal.toLowerCase().includes(term);
+                const matchAccion   = !accion   || accionVal.includes(accion);
+                const matchServicio = !servicio || servicioVal === servicio;
+                const matchUsuario  = !usuario  || usuarioVal.includes(usuario);
+                const matchDesde    = !desde    || (fecha && fecha >= desde);
+                const matchHasta    = !hasta    || (fecha && fecha <= hasta);
+
+                return matchTerm && matchAccion && matchServicio && matchUsuario && matchDesde && matchHasta;
+            });
+        }
+
+        function renderPage() {
+            const filtered = getFiltered();
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+            if (currentPage >= totalPages) currentPage = totalPages - 1;
+            const pageData = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+            document.getElementById('resultCount').textContent =
+                `Mostrando ${pageData.length} de ${filtered.length} registros (total: ${allHistory.length})`;
+            document.getElementById('pageInfo').textContent = `Pág. ${currentPage + 1} / ${totalPages}`;
+            document.getElementById('btnPrevPage').disabled = currentPage === 0;
+            document.getElementById('btnNextPage').disabled = currentPage >= totalPages - 1;
+
             historyBody.innerHTML = '';
-            if (data.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay registros en el historial.</td></tr>';
+            if (pageData.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay registros con los filtros aplicados.</td></tr>';
                 return;
             }
-            data.forEach(h => {
-                // Mapeo flexible del campo acción (ENTRADA → IN, etc.)
-                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
-                let actionBadge = '';
-                switch(accion) {
-                    case 'IN':
-                    case 'ENTRADA': actionBadge = '<span class="badge badge-stock">ENTRADA</span>'; break;
-                    case 'OUT':
-                    case 'SALIDA': actionBadge = '<span class="badge badge-danger">SALIDA</span>'; break;
-                    default: actionBadge = `<span class="badge badge-warning">${accion}</span>`; break;
-                }
 
-                const fecha = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '-';
-                const usuario = h.usuarioEmail ?? h.usuario ?? '-';
-                const entidad = h.nombreProducto ?? `Producto #${h.productoId ?? '-'}`;
-                const cantidad = h.cantidad > 0 ? `+${h.cantidad}` : `${h.cantidad}`;
-                const colorCantidad = h.cantidad > 0 ? 'var(--success)' : 'var(--error)';
-                const motivo = h.notas ?? h.motivo ?? '-';
+            pageData.forEach(h => {
+                const accion     = (h.accion ?? h.tipo ?? '').toUpperCase();
+                const servicioOr = (h.servicioOrigen ?? '').toUpperCase();
+                const fecha      = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '—';
+                const usuario    = h.usuarioEmail ?? '—';
+                const entidad    = h.nombreProducto ?? (h.productoId ? `Producto #${h.productoId}` : (h.proveedorId ? `Proveedor #${h.proveedorId}` : `#${h.entidadId ?? '—'}`));
+                const cantidad   = h.cantidad != null ? (h.cantidad > 0 ? `+${h.cantidad}` : `${h.cantidad}`) : '—';
+                const colorCant  = h.cantidad > 0 ? 'var(--success)' : h.cantidad < 0 ? 'var(--error)' : 'var(--text-secondary)';
+                const detalle    = h.detalles ?? '—';
+
+                let badgeClass = 'badge-warning';
+                if (accion.includes('ENTRADA') || accion.includes('IN'))  badgeClass = 'badge-stock';
+                if (accion.includes('SALIDA')  || accion.includes('OUT')) badgeClass = 'badge-danger';
+                if (accion.includes('CREAR')   || accion.includes('CREATE') || accion.includes('REGISTRO')) badgeClass = 'badge-info';
+
+                const serviceBadges = { INVENTORY: 'badge-stock', CATALOG: 'badge-warning', SUPPLIERS: 'badge-info', USERS: 'badge-purple' };
+                const serviceLabels = { INVENTORY: 'Inventario', CATALOG: 'Catálogo', SUPPLIERS: 'Proveedores', USERS: 'Usuarios' };
+                const svcClass = serviceBadges[servicioOr] ?? 'badge-warning';
+                const svcLabel = serviceLabels[servicioOr] ?? servicioOr;
 
                 historyBody.innerHTML += `
                     <tr>
-                        <td style="color: var(--text-secondary); font-size: 0.9rem;">${fecha}</td>
-                        <td style="font-weight: 600;">${usuario}</td>
-                        <td>${actionBadge}</td>
-                        <td>${entidad}</td>
-                        <td style="font-weight: 700; color: ${colorCantidad};">${cantidad}</td>
-                        <td style="font-style: italic; color: var(--text-secondary);">${motivo}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.85rem; white-space:nowrap;">${fecha}</td>
+                        <td style="font-size:0.85rem;">${usuario}</td>
+                        <td><span class="badge ${badgeClass}">${accion}</span></td>
+                        <td>${svcLabel ? `<span class="badge ${svcClass}">${svcLabel}</span>` : '—'}</td>
+                        <td style="font-weight:500;">${entidad}</td>
+                        <td style="font-weight: 700; color: ${colorCant};">${cantidad}</td>
+                        <td style="color: var(--text-secondary); font-size:0.85rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${detalle}">${detalle}</td>
                     </tr>
                 `;
             });
         }
 
         async function loadHistory() {
-            historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando registros...</td></tr>';
             try {
-                const data = await api.get('/auditoria');
-                allHistory = Array.isArray(data) ? data : (data.content ?? []);
-                renderHistory(allHistory);
-            } catch (err) {
-                historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error);">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
+                // Carga hasta 500 registros para filtrado local
+                const data = await api.get('/auditoria?size=500&page=0');
+                allHistory = data.content ?? (Array.isArray(data) ? data : []);
+                currentPage = 0;
+                renderPage();
+            } catch {
+                historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
             }
         }
 
-        // Filtros combinados (locales)
-        function filterData() {
-            const term = searchInput.value.toLowerCase();
-            const type = typeFilter.value;
+        function applyFilters() { currentPage = 0; renderPage(); }
 
-            const filtered = allHistory.filter(h => {
-                const entidad = (h.nombreProducto ?? `Producto #${h.productoId}` ?? '').toLowerCase();
-                const motivo = (h.notas ?? h.motivo ?? '').toLowerCase();
-                const accion = (h.accion ?? h.tipo ?? '').toUpperCase();
+        searchInput.addEventListener('input', applyFilters);
+        filterAccion.addEventListener('change', applyFilters);
+        filterServicio.addEventListener('change', applyFilters);
+        filterDesde.addEventListener('change', applyFilters);
+        filterHasta.addEventListener('change', applyFilters);
+        filterUsuario.addEventListener('input', applyFilters);
 
-                const matchesTerm = entidad.includes(term) || motivo.includes(term);
-                const matchesType = type === 'ALL' || accion === type || accion === (type === 'IN' ? 'ENTRADA' : 'SALIDA');
-                return matchesTerm && matchesType;
-            });
+        document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
+            searchInput.value = '';
+            filterAccion.value = '';
+            filterServicio.value = '';
+            filterDesde.value = '';
+            filterHasta.value = '';
+            filterUsuario.value = '';
+            applyFilters();
+        });
 
-            renderHistory(filtered);
-        }
+        document.getElementById('btnRecargar').addEventListener('click', loadHistory);
 
-        searchInput.addEventListener('input', filterData);
-        typeFilter.addEventListener('change', filterData);
+        document.getElementById('btnPrevPage').addEventListener('click', () => { currentPage--; renderPage(); });
+        document.getElementById('btnNextPage').addEventListener('click', () => { currentPage++; renderPage(); });
 
-        // Inicializar
         loadHistory();
-        lucide.createIcons();
     </script>
 </body>
 </html>
