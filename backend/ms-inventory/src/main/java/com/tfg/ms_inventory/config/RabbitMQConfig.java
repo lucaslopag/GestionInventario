@@ -34,7 +34,7 @@ public class RabbitMQConfig {
 
     // Conversor a JSON para que RabbitMQ entienda los objetos Java (AuditoriaEventoDTO)
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 }
