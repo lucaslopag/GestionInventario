@@ -63,6 +63,10 @@ echo  [7/8] Lanzando MS-AUDIT y MS-MAIL...
 start "MS-AUDIT" cmd /k "cd ..\backend\ms-audit && mvnw spring-boot:run"
 start "MS-MAIL" cmd /k "cd ..\backend\ms-mail && mvnw spring-boot:run"
 
+:: --- 8. FRONTEND (Servidor web local) ---
+echo  [8/8] Lanzando Servidor Frontend en puerto 5500...
+start "FRONTEND" cmd /k "cd ..\frontend && python -m http.server 5500"
+
 echo.
 echo  ======================================================================
 echo   SISTEMA LANZADO COMPLETAMENTE SEGUN EL PLAN DE INTEGRACION.
