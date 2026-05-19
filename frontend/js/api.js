@@ -36,6 +36,11 @@ const api = {
             return { error: true, message: errorMsg, status: response.status };
         }
 
+        if (Array.isArray(data)) {
+            data.success = true;
+            return data;
+        }
+
         return { ...data, success: true };
     },
 

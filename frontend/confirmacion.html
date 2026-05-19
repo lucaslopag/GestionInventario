@@ -31,11 +31,29 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            const reason = urlParams.get('reason');
             const token = urlParams.get('token');
             const loading = document.getElementById('loading');
             const success = document.getElementById('success');
             const error = document.getElementById('error');
 
+            // Si el backend nos redirigió con status=ok
+            if (status === 'ok') {
+                loading.style.display = 'none';
+                success.style.display = 'block';
+                return;
+            }
+            
+            // Si el backend nos redirigió con status=error
+            if (status === 'error') {
+                loading.style.display = 'none';
+                document.getElementById('errorMsg').textContent = reason === 'expired' ? 'El token ha expirado.' : 'El token no es válido o ya fue usado.';
+                error.style.display = 'block';
+                return;
+            }
+
+            // Si el enlace contiene el token directamente, hacemos la validación nosotros (flujo alternativo)
             if (!token) {
                 loading.style.display = 'none';
                 error.style.display = 'block';
