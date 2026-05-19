@@ -21,6 +21,8 @@ public class Producto {
     private String sku;
     @Column(nullable = false)
     private Double precioNeto;
+    @Column
+    private String categoria;
     @Column(nullable = false)
     private boolean activo;
 

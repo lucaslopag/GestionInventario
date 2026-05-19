@@ -18,5 +18,6 @@ public class ProductoDTO {
     @Min(value = 0, message = "El precio neto debe ser mayor o igual a 0")
     private Double precioNeto;
     private String sku;
+    private String categoria;
     private Boolean activo;
 }

@@ -40,6 +40,7 @@ public class ProductoService {
         Producto producto = new Producto();
         producto.setNombre(productoDTO.getNombre());
         producto.setPrecioNeto(productoDTO.getPrecioNeto());
+        producto.setCategoria(productoDTO.getCategoria());
         producto.setActivo(true);
 
         String skuGenerado = "PROD-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -69,6 +70,10 @@ public class ProductoService {
 
         if (dto.getPrecioNeto() != null) {
             producto.setPrecioNeto(dto.getPrecioNeto());
+        }
+
+        if (dto.getCategoria() != null) {
+            producto.setCategoria(dto.getCategoria());
         }
 
         Producto productoActualizado = productoRepository.save(producto);
@@ -136,6 +141,7 @@ public class ProductoService {
         dto.setNombre(producto.getNombre());
         dto.setSku(producto.getSku());
         dto.setPrecioNeto(producto.getPrecioNeto());
+        dto.setCategoria(producto.getCategoria());
         dto.setActivo(producto.isActivo());
         return dto;
     }
