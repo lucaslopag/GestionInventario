@@ -269,7 +269,7 @@
 
                 const provSelect = document.getElementById('adjProveedor');
                 if(provSelect) {
-                    provSelect.innerHTML = '<option value="">Ninguno / No aplica</option>';
+                    provSelect.innerHTML = '<option value="">-- Selecciona un proveedor --</option>';
                     allProveedores.forEach(prov => {
                         provSelect.innerHTML += `<option value="${prov.id}">${prov.nombre}</option>`;
                     });
