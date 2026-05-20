@@ -29,8 +29,8 @@
             </header>
 
             <!-- Filtros -->
-            <div class="filters-bar">
-                <div class="search-box">
+            <div class="filters-bar" style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
+                <div class="search-box" style="flex:1; min-width:250px;">
                     <input type="text" id="searchInput" placeholder="Buscar por nombre, email o dirección...">
                 </div>
                 <select id="filterOrden" class="filter-select">
@@ -38,14 +38,15 @@
                     <option value="nombre">Nombre A–Z</option>
                     <option value="email">Email A–Z</option>
                 </select>
-                <button class="btn-add" id="openModalBtn" style="white-space:nowrap;">+ Nuevo Proveedor</button>
+                <div id="colToggleContainer"></div>
+                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Proveedor</button>
             </div>
 
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
             <!-- Tabla -->
             <div class="table-container">
-                <table>
+                <table id="providersTable">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -95,6 +96,7 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sidebar.js"></script>
+    <script src="js/tableUtils.js"></script>
     <script>
         lucide.createIcons();
 
@@ -218,7 +220,10 @@
         searchInput.addEventListener('input', applyFilters);
         filterOrden.addEventListener('change', applyFilters);
 
-        loadProviders();
+        loadProviders().then(() => {
+            initTableUtils('providersTable', 'colToggleContainer');
+            observeTableChanges('providersTable', 'colToggleContainer');
+        });
     </script>
 </body>
 </html>

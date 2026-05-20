@@ -648,3 +648,60 @@ tr:hover td {
     background: rgba(139, 92, 246, 0.15);
     color: #8b5cf6;
 }
+
+/* ─── Utilidades de Tabla (Resizer y Ocultar Columnas) ─── */
+.col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    cursor: col-resize;
+    user-select: none;
+    height: 100%;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.col-resizer:hover, .col-resizer.resizing {
+    background: var(--accent);
+}
+
+.column-toggle-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.column-toggle-menu {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    background: #171c29;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+    z-index: 100;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.column-toggle-menu.show {
+    display: flex;
+}
+
+.column-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: white;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.column-toggle-item input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}

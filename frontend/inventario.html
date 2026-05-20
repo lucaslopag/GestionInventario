@@ -48,13 +48,14 @@
                     <option value="stock-desc">Stock: mayor primero</option>
                     <option value="nombre">Nombre A–Z</option>
                 </select>
+                <div id="colToggleContainer" style="margin-left: auto;"></div>
             </div>
 
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
             <!-- Tabla Stock -->
             <div class="table-container">
-                <table>
+                <table id="inventoryTable">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -83,12 +84,13 @@
                         <option value="ENTRADA">Entradas</option>
                         <option value="SALIDA">Salidas</option>
                     </select>
+                    <div id="histColToggleContainer" style="margin-left: auto;"></div>
                 </div>
 
                 <p id="histCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
                 <div class="table-container">
-                    <table>
+                    <table id="historyTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -153,6 +155,7 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/sidebar.js"></script>
+    <script src="js/tableUtils.js"></script>
     <script>
         lucide.createIcons();
 
@@ -421,7 +424,14 @@
         document.getElementById('histSearch').addEventListener('input', renderMovimientos);
         document.getElementById('histFilterTipo').addEventListener('change', renderMovimientos);
 
-        loadInventory().then(() => loadMovimientos());
+        loadInventory().then(() => {
+            return loadMovimientos();
+        }).then(() => {
+            initTableUtils('inventoryTable', 'colToggleContainer');
+            initTableUtils('historyTable', 'histColToggleContainer');
+            observeTableChanges('inventoryTable', 'colToggleContainer');
+            observeTableChanges('historyTable', 'histColToggleContainer');
+        });
     </script>
 </body>
 </html>
