@@ -31,8 +31,13 @@ const api = {
         }
 
         if (!response.ok) {
-            // Si el backend no devuelve un campo 'message', buscamos en 'error' o lanzamos el status
-            const errorMsg = data.message || data.error || `Error ${response.status}: ${response.statusText}`;
+            // Mensaje amigable según el código HTTP
+            let errorMsg;
+            if (response.status === 403) {
+                errorMsg = 'No tienes permisos para realizar esta acción. Se requiere rol ADMIN.';
+            } else {
+                errorMsg = data.message || data.error || `Error ${response.status}: ${response.statusText}`;
+            }
             return { error: true, message: errorMsg, status: response.status };
         }
 
