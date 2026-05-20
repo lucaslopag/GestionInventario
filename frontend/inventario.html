@@ -99,9 +99,11 @@
                     <input type="number" id="adjQuantity" required min="1" placeholder="Ej. 10">
                 </div>
 
-                <div class="form-group">
-                    <label>Motivo / Notas</label>
-                    <input type="text" id="adjReason" required placeholder="Ej. Reposición semanal, Venta a cliente...">
+                <div class="form-group" id="provGroup">
+                    <label>Proveedor (Opcional)</label>
+                    <select id="adjProveedor">
+                        <option value="">Ninguno / No aplica</option>
+                    </select>
                 </div>
 
                 <div id="stockAlert" style="display:none; background: rgba(255,75,92,0.1); color: var(--error); border: 1px solid rgba(255,75,92,0.3); border-radius: 12px; padding: 0.8rem 1rem; font-size:0.9rem; margin-bottom:1rem;"></div>
@@ -191,16 +193,50 @@
 
         function applyFilters() { renderInventory(getFiltered()); }
 
+        let allProveedores = [];
+
         async function loadInventory() {
             inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando...</td></tr>';
             try {
-                const data = await api.get('/inventario/stock');
-                allProducts = Array.isArray(data) ? data : (data.content ?? []);
+                const [productosRes, stockRes, proveedoresRes] = await Promise.allSettled([
+                    api.get('/productos'),
+                    api.get('/inventario/stock'),
+                    api.get('/proveedores')
+                ]);
 
-                // Poblar categorías
+                let productos = [];
+                let stocks = [];
+
+                if (productosRes.status === 'fulfilled' && !productosRes.value.error) {
+                    productos = Array.isArray(productosRes.value) ? productosRes.value : (productosRes.value.content ?? []);
+                }
+                if (stockRes.status === 'fulfilled' && !stockRes.value.error) {
+                    stocks = Array.isArray(stockRes.value) ? stockRes.value : (stockRes.value.content ?? []);
+                }
+                if (proveedoresRes.status === 'fulfilled' && !proveedoresRes.value.error) {
+                    allProveedores = Array.isArray(proveedoresRes.value) ? proveedoresRes.value : (proveedoresRes.value.content ?? []);
+                }
+
+                allProducts = productos.map(p => {
+                    const s = stocks.find(x => x.productoId === p.id);
+                    return {
+                        ...p,
+                        productoId: p.id,
+                        cantidadDisponible: s ? s.cantidadDisponible : 0
+                    };
+                });
+
                 const cats = [...new Set(allProducts.map(p => p.categoria).filter(Boolean))].sort();
                 filterCat.innerHTML = '<option value="">Todas las categorías</option>';
                 cats.forEach(c => { filterCat.innerHTML += `<option value="${c}">${c}</option>`; });
+
+                const provSelect = document.getElementById('adjProveedor');
+                if(provSelect) {
+                    provSelect.innerHTML = '<option value="">Ninguno / No aplica</option>';
+                    allProveedores.forEach(prov => {
+                        provSelect.innerHTML += `<option value="${prov.id}">${prov.nombre}</option>`;
+                    });
+                }
 
                 renderInventory(allProducts);
             } catch {
@@ -212,16 +248,19 @@
             document.getElementById('targetProdId').value = id;
             document.getElementById('targetProdName').textContent = name;
             document.getElementById('adjQuantity').value = '';
-            document.getElementById('adjReason').value = '';
+            document.getElementById('adjProveedor').value = '';
             document.getElementById('stockAlert').style.display = 'none';
             modalMsg.style.display = 'none';
 
             const stockAlert = document.getElementById('stockAlert');
+            const provGroup = document.getElementById('provGroup');
+            
             if (currentStock === 0) {
                 stockAlert.textContent = `⚠ Stock actual: 0 unidades. Solo se permite entrada.`;
                 stockAlert.style.display = 'block';
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = true;
                 document.querySelector('input[name="moveType"][value="IN"]').checked = true;
+                provGroup.style.display = 'block';
             } else {
                 stockAlert.textContent = `Stock actual: ${currentStock} unidades.`;
                 stockAlert.style.display = 'block';
@@ -229,9 +268,16 @@
                 stockAlert.style.color = 'var(--accent)';
                 stockAlert.style.borderColor = 'rgba(0,210,255,0.2)';
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = false;
+                provGroup.style.display = document.querySelector('input[name="moveType"]:checked').value === 'IN' ? 'block' : 'none';
             }
             modal.style.display = 'flex';
         }
+
+        document.querySelectorAll('input[name="moveType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('provGroup').style.display = e.target.value === 'IN' ? 'block' : 'none';
+            });
+        });
 
         document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
         window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
@@ -241,10 +287,14 @@
             const productoId = parseInt(document.getElementById('targetProdId').value);
             const cantidad   = parseInt(document.getElementById('adjQuantity').value);
             const tipo       = document.querySelector('input[name="moveType"]:checked').value;
-            const notas      = document.getElementById('adjReason').value;
+            const provIdStr  = document.getElementById('adjProveedor').value;
+            const proveedorId = provIdStr ? parseInt(provIdStr) : null;
             const endpoint   = tipo === 'IN' ? '/inventario/entrada' : '/inventario/salida';
 
-            const res = await api.post(endpoint, { productoId, cantidad, notas });
+            const payload = { productoId, cantidad };
+            if (proveedorId) payload.proveedorId = proveedorId;
+
+            const res = await api.post(endpoint, payload);
             if (res && res.error) {
                 modalMsg.textContent = res.message || 'Error al registrar movimiento.';
                 modalMsg.className = 'alert alert-error';
