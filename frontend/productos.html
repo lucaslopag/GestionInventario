@@ -36,11 +36,10 @@
                 <select id="filterCategoria" class="filter-select">
                     <option value="">Todas las categorías</option>
                 </select>
-                <select id="filterEstado" class="filter-select">
-                    <option value="">Todos los estados</option>
-                    <option value="disponible">Disponible</option>
-                    <option value="bajo">Stock Bajo</option>
-                    <option value="agotado">Sin Stock</option>
+                <select id="filterActivo" class="filter-select">
+                    <option value="activos">Solo Activos</option>
+                    <option value="inactivos">Solo Inactivos</option>
+                    <option value="todos">Todos</option>
                 </select>
                 <select id="filterPrecio" class="filter-select">
                     <option value="">Cualquier precio</option>
@@ -52,9 +51,6 @@
                 <button class="btn-add" id="openModalBtn" style="white-space:nowrap;">+ Nuevo Producto</button>
             </div>
 
-            <div id="activeFiltersBar" style="display:none; margin-bottom:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;"></div>
-
-            <!-- Contador de resultados -->
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
             <!-- Tabla -->
@@ -69,7 +65,7 @@
                             <th>Precio</th>
                             <th>Stock</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            <th id="accionesHeader">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="productsBody"></tbody>
@@ -89,12 +85,12 @@
             <form id="productForm">
                 <input type="hidden" id="prodId">
                 <div class="form-group">
-                    <label>Nombre del Producto</label>
+                    <label>Nombre del Producto *</label>
                     <input type="text" id="prodName" required placeholder="Ej. Laptop Pro">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label>Categoría</label>
+                        <label>Categoría *</label>
                         <input type="text" id="prodCat" required placeholder="Ej. Electrónica" list="catSuggestions">
                         <datalist id="catSuggestions"></datalist>
                     </div>
@@ -104,8 +100,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Precio (€)</label>
-                    <input type="number" id="prodPrice" step="0.01" required placeholder="0.00">
+                    <label>Precio (€) *</label>
+                    <input type="number" id="prodPrice" step="0.01" required placeholder="0.00" min="0">
                 </div>
                 <button type="submit" id="submitBtn">Guardar Producto</button>
             </form>
@@ -118,63 +114,88 @@
     <script>
         lucide.createIcons();
 
-        let allProducts = [];
+        let allProducts = []; // productos activos
+        let allInactivos = []; // productos inactivos
         let stockMap = {};
+        let isAdmin = false;
 
-        const productsBody = document.getElementById('productsBody');
-        const searchInput = document.getElementById('searchInput');
+        // Detectar rol del usuario para mostrar/ocultar acciones
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+            try {
+                const u = JSON.parse(userRaw);
+                isAdmin = (u.rol || '').toUpperCase() === 'ADMIN';
+            } catch(e) {}
+        }
+
+        const productsBody   = document.getElementById('productsBody');
+        const searchInput    = document.getElementById('searchInput');
         const filterCategoria = document.getElementById('filterCategoria');
-        const filterEstado = document.getElementById('filterEstado');
-        const filterPrecio = document.getElementById('filterPrecio');
-        const modal = document.getElementById('modalOverlay');
-        const modalMsg = document.getElementById('modalMsg');
-        const productForm = document.getElementById('productForm');
+        const filterActivo   = document.getElementById('filterActivo');
+        const filterPrecio   = document.getElementById('filterPrecio');
+        const modal          = document.getElementById('modalOverlay');
+        const modalMsg       = document.getElementById('modalMsg');
+        const productForm    = document.getElementById('productForm');
+
+        // Ocultar botón añadir y columna acciones si no es ADMIN
+        if (!isAdmin) {
+            document.getElementById('openModalBtn').style.display = 'none';
+        }
+
+        function getPool() {
+            const estado = filterActivo.value;
+            if (estado === 'inactivos') return allInactivos;
+            if (estado === 'activos')   return allProducts;
+            return [...allProducts, ...allInactivos];
+        }
 
         function getFilteredProducts() {
-            const term = searchInput.value.toLowerCase();
-            const cat = filterCategoria.value;
-            const estado = filterEstado.value;
+            const term   = searchInput.value.toLowerCase();
+            const cat    = filterCategoria.value;
             const precio = filterPrecio.value;
 
-            return allProducts.filter(p => {
-                const stock = stockMap[p.id] ?? p.stock ?? 0;
+            return getPool().filter(p => {
                 const precio_v = p.precioNeto ?? p.precio ?? 0;
-
-                const matchTerm = !term || p.nombre.toLowerCase().includes(term) || (p.sku || '').toLowerCase().includes(term);
-                const matchCat = !cat || (p.categoria || '') === cat;
-
-                let matchEstado = true;
-                if (estado === 'disponible') matchEstado = stock >= 10;
-                else if (estado === 'bajo') matchEstado = stock > 0 && stock < 10;
-                else if (estado === 'agotado') matchEstado = stock === 0;
+                const matchTerm  = !term  || p.nombre.toLowerCase().includes(term) || (p.sku || '').toLowerCase().includes(term);
+                const matchCat   = !cat   || (p.categoria || '') === cat;
 
                 let matchPrecio = true;
-                if (precio === '0-50') matchPrecio = precio_v <= 50;
-                else if (precio === '50-200') matchPrecio = precio_v > 50 && precio_v <= 200;
+                if (precio === '0-50')      matchPrecio = precio_v <= 50;
+                else if (precio === '50-200')   matchPrecio = precio_v > 50  && precio_v <= 200;
                 else if (precio === '200-1000') matchPrecio = precio_v > 200 && precio_v <= 1000;
-                else if (precio === '1000+') matchPrecio = precio_v > 1000;
+                else if (precio === '1000+')    matchPrecio = precio_v > 1000;
 
-                return matchTerm && matchCat && matchEstado && matchPrecio;
+                return matchTerm && matchCat && matchPrecio;
             });
         }
 
         function renderProducts(data) {
             productsBody.innerHTML = '';
-            document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${allProducts.length} productos`;
+            const totalPool = getPool().length;
+            document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${totalPool} productos`;
 
             if (data.length === 0) {
                 productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No se encontraron productos con los filtros aplicados.</td></tr>';
                 return;
             }
             data.forEach(p => {
-                const stock = stockMap[p.id] ?? p.stock ?? 0;
+                const stock       = stockMap[p.id] ?? 0;
                 const stockStatus = stock === 0 ? 'badge-danger' : (stock < 10 ? 'badge-warning' : 'badge-stock');
-                const stockText = stock === 0 ? 'Sin Stock' : (stock < 10 ? 'Stock Bajo' : 'Disponible');
-                const precio = (p.precioNeto ?? p.precio ?? 0).toFixed(2);
-                const activo = p.activo !== false;
+                const stockText   = stock === 0 ? 'Sin Stock'  : (stock < 10 ? 'Stock Bajo'  : 'Disponible');
+                const precio      = (p.precioNeto ?? p.precio ?? 0).toFixed(2);
+                const activo      = p.activo !== false;
+                const rowStyle    = !activo ? 'opacity:0.5; filter:grayscale(0.5);' : '';
+
+                const accionesHtml = isAdmin ? `
+                    <td style="display:flex; gap:0.5rem;">
+                        <button onclick="editProduct(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
+                        <button onclick="toggleActivoProduct(${p.id}, ${activo})" class="btn-icon ${activo ? 'btn-danger' : 'btn-edit'}" title="${activo ? 'Desactivar' : 'Reactivar'}">
+                            <i data-lucide="${activo ? 'trash-2' : 'rotate-ccw'}"></i>
+                        </button>
+                    </td>` : `<td>—</td>`;
 
                 productsBody.innerHTML += `
-                    <tr style="${!activo ? 'opacity:0.5;' : ''}">
+                    <tr style="${rowStyle}">
                         <td>#${p.id}</td>
                         <td style="font-weight: 600;">${p.nombre}</td>
                         <td>${p.categoria ?? '—'}</td>
@@ -182,35 +203,31 @@
                         <td>${precio} €</td>
                         <td style="font-weight:700;">${stock}</td>
                         <td><span class="badge ${stockStatus}">${stockText}</span></td>
-                        <td style="display:flex; gap:0.5rem;">
-                            <button onclick="editProduct(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
-                            <button onclick="deactivateProduct(${p.id})" class="btn-icon btn-danger" title="${activo ? 'Desactivar' : 'Activar'}">
-                                <i data-lucide="${activo ? 'trash-2' : 'refresh-cw'}"></i>
-                            </button>
-                        </td>
+                        ${accionesHtml}
                     </tr>
                 `;
             });
             lucide.createIcons();
         }
 
-        function applyFilters() {
-            renderProducts(getFilteredProducts());
-        }
+        function applyFilters() { renderProducts(getFilteredProducts()); }
 
         async function loadProducts() {
             productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando productos...</td></tr>';
             try {
-                const [prodData, stockData] = await Promise.allSettled([
+                const [prodActivos, prodInactivos, stockData] = await Promise.allSettled([
                     api.get('/productos'),
+                    api.get('/productos/inactivos'),
                     api.get('/inventario/stock')
                 ]);
 
-                if (prodData.status === 'fulfilled' && !prodData.value.error) {
-                    allProducts = Array.isArray(prodData.value) ? prodData.value : (prodData.value.content ?? []);
-                } else {
-                    allProducts = [];
-                }
+                allProducts  = (prodActivos.status  === 'fulfilled' && !prodActivos.value.error)
+                    ? (Array.isArray(prodActivos.value)  ? prodActivos.value  : (prodActivos.value.content  ?? []))
+                    : [];
+
+                allInactivos = (prodInactivos.status === 'fulfilled' && !prodInactivos.value.error)
+                    ? (Array.isArray(prodInactivos.value) ? prodInactivos.value : (prodInactivos.value.content ?? []))
+                    : [];
 
                 if (stockData.status === 'fulfilled' && !stockData.value.error) {
                     const stocks = Array.isArray(stockData.value) ? stockData.value : (stockData.value.content ?? []);
@@ -218,36 +235,40 @@
                     stocks.forEach(s => { stockMap[s.productoId ?? s.id] = s.cantidadDisponible ?? s.cantidad ?? 0; });
                 }
 
-                // Poblar selector de categorías
-                const cats = [...new Set(allProducts.map(p => p.categoria).filter(Boolean))].sort();
+                // Poblar selector de categorías (de ambos pools)
+                const todosProductos = [...allProducts, ...allInactivos];
+                const cats = [...new Set(todosProductos.map(p => p.categoria).filter(Boolean))].sort();
                 filterCategoria.innerHTML = '<option value="">Todas las categorías</option>';
                 cats.forEach(c => { filterCategoria.innerHTML += `<option value="${c}">${c}</option>`; });
 
-                // Sugerencias de categorías en el formulario
                 const datalist = document.getElementById('catSuggestions');
+                datalist.innerHTML = '';
                 cats.forEach(c => { datalist.innerHTML += `<option value="${c}">`; });
 
-                renderProducts(allProducts);
+                renderProducts(getFilteredProducts());
             } catch (err) {
                 productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar productos.</td></tr>';
             }
         }
 
-        async function deactivateProduct(id) {
-            if (!confirm('¿Seguro que quieres cambiar el estado de este producto?')) return;
+        // Borrado LÓGICO: toggle activo/inactivo según FDD (activo=false NO borra de BD)
+        async function toggleActivoProduct(id, activo) {
+            const accion = activo ? 'desactivar' : 'reactivar';
+            if (!confirm(`¿Seguro que quieres ${accion} este producto?`)) return;
             const res = await api.delete(`/productos/${id}`);
             if (res && res.error) { alert(res.message); return; }
             await loadProducts();
         }
 
         function editProduct(id) {
-            const p = allProducts.find(x => x.id === id);
+            const allPool = [...allProducts, ...allInactivos];
+            const p = allPool.find(x => x.id === id);
             if (!p) return;
             document.getElementById('modalTitle').textContent = 'Editar Producto';
-            document.getElementById('prodId').value = p.id;
-            document.getElementById('prodName').value = p.nombre;
-            document.getElementById('prodCat').value = p.categoria ?? '';
-            document.getElementById('prodSku').value = p.sku ?? '';
+            document.getElementById('prodId').value    = p.id;
+            document.getElementById('prodName').value  = p.nombre;
+            document.getElementById('prodCat').value   = p.categoria ?? '';
+            document.getElementById('prodSku').value   = p.sku ?? '';
             document.getElementById('prodPrice').value = p.precioNeto ?? p.precio ?? '';
             document.getElementById('submitBtn').textContent = 'Actualizar Producto';
             modalMsg.style.display = 'none';
@@ -269,14 +290,14 @@
             e.preventDefault();
             const id = document.getElementById('prodId').value;
             const body = {
-                nombre: document.getElementById('prodName').value,
-                categoria: document.getElementById('prodCat').value,
+                nombre:    document.getElementById('prodName').value.trim(),
+                categoria: document.getElementById('prodCat').value.trim(),
                 precioNeto: parseFloat(document.getElementById('prodPrice').value),
-                sku: document.getElementById('prodSku').value || `SKU-${Date.now()}`
+                sku: document.getElementById('prodSku').value.trim() || undefined
             };
             const res = id ? await api.put(`/productos/${id}`, body) : await api.post('/productos', body);
             if (res && res.error) {
-                modalMsg.textContent = res.message;
+                modalMsg.textContent = res.message || 'Error al guardar el producto.';
                 modalMsg.className = 'alert alert-error';
                 modalMsg.style.display = 'block';
                 return;
@@ -288,7 +309,7 @@
 
         searchInput.addEventListener('input', applyFilters);
         filterCategoria.addEventListener('change', applyFilters);
-        filterEstado.addEventListener('change', applyFilters);
+        filterActivo.addEventListener('change', applyFilters);
         filterPrecio.addEventListener('change', applyFilters);
 
         loadProducts();

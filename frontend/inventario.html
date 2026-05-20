@@ -52,7 +52,7 @@
 
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
-            <!-- Tabla -->
+            <!-- Tabla Stock -->
             <div class="table-container">
                 <table>
                     <thead>
@@ -67,6 +67,43 @@
                     </thead>
                     <tbody id="inventoryBody"></tbody>
                 </table>
+            </div>
+
+            <!-- Historial de Movimientos -->
+            <div style="margin-top: 3rem;">
+                <h3 style="margin-bottom: 1.5rem;">Historial de Movimientos</h3>
+
+                <!-- Filtros historial -->
+                <div class="filters-bar" style="margin-bottom: 1rem;">
+                    <div class="search-box">
+                        <input type="text" id="histSearch" placeholder="Buscar por producto...">
+                    </div>
+                    <select id="histFilterTipo" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="ENTRADA">Entradas</option>
+                        <option value="SALIDA">Salidas</option>
+                    </select>
+                </div>
+
+                <p id="histCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tipo</th>
+                                <th>Producto</th>
+                                <th>Proveedor</th>
+                                <th>Cantidad</th>
+                                <th>Stock Resultante</th>
+                                <th>Usuario</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movimientosBody"></tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
@@ -318,7 +355,73 @@
         filterCat.addEventListener('change', applyFilters);
         filterOrden.addEventListener('change', applyFilters);
 
-        loadInventory();
+        // ── HISTORIAL DE MOVIMIENTOS ──────────────────────────────────────────
+        let allMovimientos = [];
+
+        function renderMovimientos() {
+            const body    = document.getElementById('movimientosBody');
+            const term    = (document.getElementById('histSearch').value || '').toLowerCase();
+            const tipo    = document.getElementById('histFilterTipo').value;
+
+            // Cruzar con allProducts (nombres) y allProveedores
+            const data = allMovimientos.filter(m => {
+                const prod = allProducts.find(p => p.id === m.productoId || p.productoId === m.productoId);
+                const nombre = (prod ? (prod.nombre || prod.nombreProducto || '') : `#${m.productoId}`).toLowerCase();
+                const matchTerm = !term || nombre.includes(term);
+                const matchTipo = !tipo || m.tipo === tipo;
+                return matchTerm && matchTipo;
+            });
+
+            document.getElementById('histCount').textContent = `${data.length} movimiento(s) encontrado(s)`;
+
+            if (data.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay movimientos registrados.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = '';
+            data.forEach(m => {
+                const prod  = allProducts.find(p => p.id === m.productoId || p.productoId === m.productoId);
+                const prov  = allProveedores.find(p => p.id === m.proveedorId);
+                const nombre    = prod ? (prod.nombre || prod.nombreProducto || `#${m.productoId}`) : `#${m.productoId}`;
+                const provNombre = m.proveedorId ? (prov ? prov.nombre : `ID #${m.proveedorId}`) : '—';
+                const fecha = m.fecha ? new Date(m.fecha).toLocaleString('es-ES') : '—';
+                const badge = m.tipo === 'ENTRADA' ? 'badge-stock' : 'badge-danger';
+
+                body.innerHTML += `
+                    <tr>
+                        <td>#${m.id}</td>
+                        <td><span class="badge ${badge}">${m.tipo}</span></td>
+                        <td style="font-weight:600;">${nombre}</td>
+                        <td>${provNombre}</td>
+                        <td style="font-weight:700;">${m.cantidad}</td>
+                        <td>${m.stockResultante ?? '—'}</td>
+                        <td style="color:var(--text-secondary); font-size:0.85rem;">${m.usuarioEmail ?? '—'}</td>
+                        <td style="color:var(--text-secondary); font-size:0.85rem;">${fecha}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function loadMovimientos() {
+            document.getElementById('movimientosBody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center; padding: 1rem; color:var(--text-secondary);">Cargando historial...</td></tr>';
+            const res = await api.get('/inventario/movimientos');
+            if (res && res.error) {
+                document.getElementById('movimientosBody').innerHTML =
+                    '<tr><td colspan="8" style="text-align:center; color:var(--error); padding:1rem;">Error al cargar el historial.</td></tr>';
+                return;
+            }
+            allMovimientos = Array.isArray(res) ? res : (res.content ?? []);
+            // ordenar por fecha desc
+            allMovimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            renderMovimientos();
+        }
+
+        document.getElementById('histSearch').addEventListener('input', renderMovimientos);
+        document.getElementById('histFilterTipo').addEventListener('change', renderMovimientos);
+
+        loadInventory().then(() => loadMovimientos());
     </script>
 </body>
 </html>
