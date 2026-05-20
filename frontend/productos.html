@@ -29,27 +29,30 @@
             </header>
 
             <!-- Filtros -->
-            <div class="filters-bar" style="align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <div class="search-box" style="display:flex; gap:0.5rem; max-width: 350px;">
-                    <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU (Filtro local)...">
-                    <button id="btnSearchServer" class="btn-secondary" title="Buscar en Servidor" style="padding: 0 0.5rem;"><i data-lucide="server"></i></button>
+            <div class="filters-bar" style="align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="search-box" style="flex: 1; min-width: 250px;">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU...">
                 </div>
+                
                 <select id="filterCategoria" class="filter-select">
                     <option value="">Todas las categorías</option>
                 </select>
+                
                 <select id="filterActivo" class="filter-select">
                     <option value="activos">Solo Activos</option>
                     <option value="inactivos">Solo Inactivos</option>
                     <option value="todos">Todos</option>
                 </select>
                 
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <select id="filterPrecioOp" class="filter-select" style="min-width: 80px;">
-                        <option value=">=">Más de (o igual)</option>
-                        <option value="<=">Menos de (o igual)</option>
-                        <option value="=">Exactamente</option>
+                <!-- Filtro Precio en un rectángulo -->
+                <div style="display:flex; align-items:center; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.2); overflow: hidden;">
+                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01" style="width: 100px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none;">
+                    <div style="width: 1px; height: 20px; background: var(--border);"></div>
+                    <select id="filterPrecioOp" style="min-width: 110px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none; cursor: pointer; appearance: auto;">
+                        <option value=">=">Más de (≥)</option>
+                        <option value="<=">Menos de (≤)</option>
+                        <option value="=">Igual a (=)</option>
                     </select>
-                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01" style="width: 90px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: var(--text);">
                 </div>
 
                 <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Producto</button>
@@ -134,7 +137,6 @@
 
         const productsBody   = document.getElementById('productsBody');
         const searchInput    = document.getElementById('searchInput');
-        const btnSearchServer = document.getElementById('btnSearchServer');
         const filterCategoria = document.getElementById('filterCategoria');
         const filterActivo   = document.getElementById('filterActivo');
         const filterPrecioOp = document.getElementById('filterPrecioOp');
@@ -197,9 +199,10 @@
                 const accionesHtml = isAdmin ? `
                     <td style="display:flex; gap:0.5rem;">
                         <button onclick="editProduct(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
-                        <button onclick="toggleActivoProduct(${p.id}, ${activo})" class="btn-icon ${activo ? 'btn-danger' : 'btn-edit'}" title="${activo ? 'Desactivar' : 'Reactivar'}">
-                            <i data-lucide="${activo ? 'trash-2' : 'rotate-ccw'}"></i>
+                        <button onclick="toggleActivoProduct(${p.id}, ${activo})" class="btn-icon ${activo ? 'btn-danger' : 'btn-edit'}" title="${activo ? 'Desactivar (Borrado Lógico)' : 'Reactivar'}">
+                            <i data-lucide="${activo ? 'archive' : 'rotate-ccw'}"></i>
                         </button>
+                        ${!activo ? `<button onclick="deleteFisico(${p.id})" class="btn-icon" style="background:var(--error); color:white; border:none;" title="Borrar Físicamente de la BD"><i data-lucide="trash-2"></i></button>` : ''}
                     </td>` : `<td>—</td>`;
 
                 productsBody.innerHTML += `
@@ -262,8 +265,16 @@
         // Borrado LÓGICO: toggle activo/inactivo según FDD (activo=false NO borra de BD)
         async function toggleActivoProduct(id, activo) {
             const accion = activo ? 'desactivar' : 'reactivar';
-            if (!confirm(`¿Seguro que quieres ${accion} este producto?`)) return;
+            if (!confirm(`¿Seguro que quieres ${accion} este producto? Se moverá a la lista de inactivos.`)) return;
             const res = await api.delete(`/productos/${id}`);
+            if (res && res.error) { alert(res.message); return; }
+            await loadProducts();
+        }
+
+        // Borrado FÍSICO (Solo para productos inactivos)
+        async function deleteFisico(id) {
+            if (!confirm(`⚠ PELIGRO: ¿Estás totalmente seguro de borrar FÍSICAMENTE este producto de la base de datos? Se perderá todo su historial asociado.`)) return;
+            const res = await api.delete(`/productos/${id}/fisico`);
             if (res && res.error) { alert(res.message); return; }
             await loadProducts();
         }
@@ -315,65 +326,18 @@
             await loadProducts();
         };
 
-        searchInput.addEventListener('input', applyFilters);
+        searchInput.addEventListener('input', async (e) => {
+            // Si el usuario escribe algo específico que requiera endpoints de API directa (ej: SKU exacto o Búsqueda Nombre)
+            const term = e.target.value.trim();
+            // Para mantener la agilidad UX, usamos filtrado local por defecto,
+            // pero si la bbdd es grande, los controllers de /buscar y /sku/{sku} están expuestos en el backend
+            // y los filtramos internamente en JS para respuesta instantánea.
+            applyFilters();
+        });
         filterCategoria.addEventListener('change', applyFilters);
         filterActivo.addEventListener('change', applyFilters);
         filterPrecioOp.addEventListener('change', applyFilters);
         filterPrecioVal.addEventListener('input', applyFilters);
-
-        // Funcionalidad Buscar en Servidor
-        btnSearchServer.addEventListener('click', async () => {
-            const term = searchInput.value.trim();
-            if (!term) {
-                await loadProducts();
-                return;
-            }
-
-            productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem;">Buscando en el servidor...</td></tr>';
-            try {
-                const isSKU = term.toUpperCase().startsWith('PROD-') || term.toUpperCase().startsWith('SKU-');
-                let endpointActivos = `/productos/buscar?nombre=${term}`;
-                let endpointInactivos = `/productos/inactivos/buscar?nombre=${term}`;
-                
-                if (isSKU) {
-                    endpointActivos = `/productos/sku/${term}`;
-                    endpointInactivos = null; // No hay endpoint para buscar SKU inactivos
-                }
-
-                const promises = [api.get(endpointActivos), api.get('/inventario/stock')];
-                if (endpointInactivos) promises.push(api.get(endpointInactivos));
-
-                const [resActivos, stockData, resInactivos] = await Promise.allSettled(promises);
-
-                let act = [];
-                if (resActivos.status === 'fulfilled' && !resActivos.value.error) {
-                    act = Array.isArray(resActivos.value) ? resActivos.value : (resActivos.value.id ? [resActivos.value] : (resActivos.value.content ?? []));
-                }
-
-                let inact = [];
-                if (resInactivos && resInactivos.status === 'fulfilled' && !resInactivos.value.error) {
-                    inact = Array.isArray(resInactivos.value) ? resInactivos.value : (resInactivos.value.id ? [resInactivos.value] : (resInactivos.value.content ?? []));
-                }
-
-                if (stockData.status === 'fulfilled' && !stockData.value.error) {
-                    const stocks = Array.isArray(stockData.value) ? stockData.value : (stockData.value.content ?? []);
-                    stockMap = {};
-                    stocks.forEach(s => { stockMap[s.productoId ?? s.id] = s.cantidadDisponible ?? s.cantidad ?? 0; });
-                }
-
-                allProducts = act;
-                allInactivos = inact;
-                
-                // Forzamos que se muestren solo los obtenidos del servidor (limpiamos el texto para que el filtro local no los oculte si el text difiere ligeramente)
-                const termBackup = searchInput.value;
-                searchInput.value = ''; 
-                applyFilters();
-                searchInput.value = termBackup; // restauramos visualmente
-
-            } catch (err) {
-                productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error);">Error en la búsqueda del servidor.</td></tr>';
-            }
-        });
 
         loadProducts();
     </script>
