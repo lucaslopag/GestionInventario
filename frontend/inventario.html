@@ -100,9 +100,9 @@
                 </div>
 
                 <div class="form-group" id="provGroup">
-                    <label>Proveedor (Opcional)</label>
-                    <select id="adjProveedor">
-                        <option value="">Ninguno / No aplica</option>
+                    <label>Proveedor *</label>
+                    <select id="adjProveedor" required>
+                        <option value="">-- Selecciona un proveedor --</option>
                     </select>
                 </div>
 
@@ -284,12 +284,20 @@
 
         document.getElementById('adjustmentForm').onsubmit = async (e) => {
             e.preventDefault();
-            const productoId = parseInt(document.getElementById('targetProdId').value);
-            const cantidad   = parseInt(document.getElementById('adjQuantity').value);
-            const tipo       = document.querySelector('input[name="moveType"]:checked').value;
-            const provIdStr  = document.getElementById('adjProveedor').value;
+            const productoId  = parseInt(document.getElementById('targetProdId').value);
+            const cantidad    = parseInt(document.getElementById('adjQuantity').value);
+            const tipo        = document.querySelector('input[name="moveType"]:checked').value;
+            const provIdStr   = document.getElementById('adjProveedor').value;
             const proveedorId = provIdStr ? parseInt(provIdStr) : null;
-            const endpoint   = tipo === 'IN' ? '/inventario/entrada' : '/inventario/salida';
+            const endpoint    = tipo === 'IN' ? '/inventario/entrada' : '/inventario/salida';
+
+            // Proveedor obligatorio en entradas
+            if (tipo === 'IN' && !proveedorId) {
+                modalMsg.textContent = 'Debes seleccionar un proveedor para registrar una entrada.';
+                modalMsg.className = 'alert alert-error';
+                modalMsg.style.display = 'block';
+                return;
+            }
 
             const payload = { productoId, cantidad };
             if (proveedorId) payload.proveedorId = proveedorId;
