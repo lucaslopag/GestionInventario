@@ -29,9 +29,10 @@
             </header>
 
             <!-- Filtros -->
-            <div class="filters-bar">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU...">
+            <div class="filters-bar" style="align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <div class="search-box" style="display:flex; gap:0.5rem; max-width: 350px;">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU (Filtro local)...">
+                    <button id="btnSearchServer" class="btn-secondary" title="Buscar en Servidor" style="padding: 0 0.5rem;"><i data-lucide="server"></i></button>
                 </div>
                 <select id="filterCategoria" class="filter-select">
                     <option value="">Todas las categorías</option>
@@ -41,14 +42,17 @@
                     <option value="inactivos">Solo Inactivos</option>
                     <option value="todos">Todos</option>
                 </select>
-                <select id="filterPrecio" class="filter-select">
-                    <option value="">Cualquier precio</option>
-                    <option value="0-50">0 — 50 €</option>
-                    <option value="50-200">50 — 200 €</option>
-                    <option value="200-1000">200 — 1.000 €</option>
-                    <option value="1000+">Más de 1.000 €</option>
-                </select>
-                <button class="btn-add" id="openModalBtn" style="white-space:nowrap;">+ Nuevo Producto</button>
+                
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <select id="filterPrecioOp" class="filter-select" style="min-width: 80px;">
+                        <option value=">=">Más de (o igual)</option>
+                        <option value="<=">Menos de (o igual)</option>
+                        <option value="=">Exactamente</option>
+                    </select>
+                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01" style="width: 90px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: var(--text);">
+                </div>
+
+                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Producto</button>
             </div>
 
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
@@ -130,9 +134,11 @@
 
         const productsBody   = document.getElementById('productsBody');
         const searchInput    = document.getElementById('searchInput');
+        const btnSearchServer = document.getElementById('btnSearchServer');
         const filterCategoria = document.getElementById('filterCategoria');
         const filterActivo   = document.getElementById('filterActivo');
-        const filterPrecio   = document.getElementById('filterPrecio');
+        const filterPrecioOp = document.getElementById('filterPrecioOp');
+        const filterPrecioVal = document.getElementById('filterPrecioVal');
         const modal          = document.getElementById('modalOverlay');
         const modalMsg       = document.getElementById('modalMsg');
         const productForm    = document.getElementById('productForm');
@@ -152,7 +158,8 @@
         function getFilteredProducts() {
             const term   = searchInput.value.toLowerCase();
             const cat    = filterCategoria.value;
-            const precio = filterPrecio.value;
+            const precioOp = filterPrecioOp.value;
+            const precioVal = filterPrecioVal.value ? parseFloat(filterPrecioVal.value) : null;
 
             return getPool().filter(p => {
                 const precio_v = p.precioNeto ?? p.precio ?? 0;
@@ -160,10 +167,11 @@
                 const matchCat   = !cat   || (p.categoria || '') === cat;
 
                 let matchPrecio = true;
-                if (precio === '0-50')      matchPrecio = precio_v <= 50;
-                else if (precio === '50-200')   matchPrecio = precio_v > 50  && precio_v <= 200;
-                else if (precio === '200-1000') matchPrecio = precio_v > 200 && precio_v <= 1000;
-                else if (precio === '1000+')    matchPrecio = precio_v > 1000;
+                if (precioVal !== null && !isNaN(precioVal)) {
+                    if (precioOp === '>=') matchPrecio = precio_v >= precioVal;
+                    if (precioOp === '<=') matchPrecio = precio_v <= precioVal;
+                    if (precioOp === '=')  matchPrecio = Math.abs(precio_v - precioVal) < 0.01;
+                }
 
                 return matchTerm && matchCat && matchPrecio;
             });
@@ -310,7 +318,62 @@
         searchInput.addEventListener('input', applyFilters);
         filterCategoria.addEventListener('change', applyFilters);
         filterActivo.addEventListener('change', applyFilters);
-        filterPrecio.addEventListener('change', applyFilters);
+        filterPrecioOp.addEventListener('change', applyFilters);
+        filterPrecioVal.addEventListener('input', applyFilters);
+
+        // Funcionalidad Buscar en Servidor
+        btnSearchServer.addEventListener('click', async () => {
+            const term = searchInput.value.trim();
+            if (!term) {
+                await loadProducts();
+                return;
+            }
+
+            productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem;">Buscando en el servidor...</td></tr>';
+            try {
+                const isSKU = term.toUpperCase().startsWith('PROD-') || term.toUpperCase().startsWith('SKU-');
+                let endpointActivos = `/productos/buscar?nombre=${term}`;
+                let endpointInactivos = `/productos/inactivos/buscar?nombre=${term}`;
+                
+                if (isSKU) {
+                    endpointActivos = `/productos/sku/${term}`;
+                    endpointInactivos = null; // No hay endpoint para buscar SKU inactivos
+                }
+
+                const promises = [api.get(endpointActivos), api.get('/inventario/stock')];
+                if (endpointInactivos) promises.push(api.get(endpointInactivos));
+
+                const [resActivos, stockData, resInactivos] = await Promise.allSettled(promises);
+
+                let act = [];
+                if (resActivos.status === 'fulfilled' && !resActivos.value.error) {
+                    act = Array.isArray(resActivos.value) ? resActivos.value : (resActivos.value.id ? [resActivos.value] : (resActivos.value.content ?? []));
+                }
+
+                let inact = [];
+                if (resInactivos && resInactivos.status === 'fulfilled' && !resInactivos.value.error) {
+                    inact = Array.isArray(resInactivos.value) ? resInactivos.value : (resInactivos.value.id ? [resInactivos.value] : (resInactivos.value.content ?? []));
+                }
+
+                if (stockData.status === 'fulfilled' && !stockData.value.error) {
+                    const stocks = Array.isArray(stockData.value) ? stockData.value : (stockData.value.content ?? []);
+                    stockMap = {};
+                    stocks.forEach(s => { stockMap[s.productoId ?? s.id] = s.cantidadDisponible ?? s.cantidad ?? 0; });
+                }
+
+                allProducts = act;
+                allInactivos = inact;
+                
+                // Forzamos que se muestren solo los obtenidos del servidor (limpiamos el texto para que el filtro local no los oculte si el text difiere ligeramente)
+                const termBackup = searchInput.value;
+                searchInput.value = ''; 
+                applyFilters();
+                searchInput.value = termBackup; // restauramos visualmente
+
+            } catch (err) {
+                productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error);">Error en la búsqueda del servidor.</td></tr>';
+            }
+        });
 
         loadProducts();
     </script>
