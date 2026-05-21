@@ -40,12 +40,17 @@ public class ProveedorService {
     }
 
     public ProveedorDTO save(ProveedorDTO proveedorDTO, String usuarioEmail) {
-        if (proveedorRepository.existsByEmail(proveedorDTO.getEmail())) {
-            throw new IllegalArgumentException("El email ya estÃƒÂ¡ registrado");
+        // Normalizar email: trim y lowercase
+        String emailNormalizado = proveedorDTO.getEmail().trim().toLowerCase();
+        
+        if (proveedorRepository.existsByEmail(emailNormalizado)) {
+            throw new IllegalArgumentException("El email '" + emailNormalizado + "' ya está registrado en otro proveedor");
         }
+        
         Proveedor proveedor = mapToEntity(proveedorDTO);
+        proveedor.setEmail(emailNormalizado); // Guardar normalizado
         Proveedor proveedorGuardado = proveedorRepository.save(proveedor);
-        auditar("POST", proveedorGuardado.getId(), usuarioEmail, "CreaciÃƒÂ³n de proveedor");
+        auditar("POST", proveedorGuardado.getId(), usuarioEmail, "Creación de proveedor: " + proveedor.getNombre());
         return mapToDTO(proveedorGuardado);
     }
 
@@ -55,17 +60,21 @@ public class ProveedorService {
             return null;
         }
         
+        // Normalizar email
+        String emailNormalizado = proveedorDTO.getEmail().trim().toLowerCase();
+        
         // Verificar si el email cambia y si el nuevo ya existe
-        if (!proveedorExistente.getEmail().equals(proveedorDTO.getEmail()) && 
-            proveedorRepository.existsByEmail(proveedorDTO.getEmail())) {
-            throw new IllegalArgumentException("El nuevo email ya estÃƒÂ¡ registrado por otro proveedor");
+        if (!proveedorExistente.getEmail().equals(emailNormalizado) && 
+            proveedorRepository.existsByEmail(emailNormalizado)) {
+            throw new IllegalArgumentException("El email '" + emailNormalizado + "' ya está registrado por otro proveedor");
         }
 
         proveedorExistente.setNombre(proveedorDTO.getNombre());
-        proveedorExistente.setEmail(proveedorDTO.getEmail());
+        proveedorExistente.setEmail(emailNormalizado);
+        proveedorExistente.setDireccion(proveedorDTO.getDireccion());
         
         ProveedorDTO actualizado = mapToDTO(proveedorRepository.save(proveedorExistente));
-        auditar("PUT", id, usuarioEmail, "ActualizaciÃƒÂ³n de proveedor");
+        auditar("PUT", id, usuarioEmail, "Actualización de proveedor: " + proveedorExistente.getNombre());
         return actualizado;
     }
 
@@ -79,6 +88,7 @@ public class ProveedorService {
         proveedorDTO.setId(proveedor.getId());
         proveedorDTO.setNombre(proveedor.getNombre());
         proveedorDTO.setEmail(proveedor.getEmail());
+        proveedorDTO.setDireccion(proveedor.getDireccion());
         return proveedorDTO;
     }
 
@@ -86,6 +96,7 @@ public class ProveedorService {
         Proveedor entity = new Proveedor();
         entity.setNombre(dto.getNombre());
         entity.setEmail(dto.getEmail());
+        entity.setDireccion(dto.getDireccion());
         return entity;
     }
 }
