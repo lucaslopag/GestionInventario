@@ -86,6 +86,7 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             const user = JSON.parse(localStorage.getItem('user')) || { nombre: 'Usuario', rol: 'USUARIO' };
+            const isAdmin = (user.rol || '').toUpperCase() === 'ADMIN';
             document.getElementById('userName').textContent = user.nombre;
             document.getElementById('userRole').textContent = (user.rol || 'USUARIO').toUpperCase();
 
@@ -138,7 +139,7 @@
                 api.get('/productos'),
                 api.get('/inventario/stock'),
                 api.get('/proveedores'),
-                api.get('/auditoria?size=100')
+                isAdmin ? api.get('/auditoria?size=100') : api.get('/inventario/movimientos')
             ]);
 
             // Stats: Productos

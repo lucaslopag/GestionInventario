@@ -451,13 +451,18 @@
                 const fecha = m.fecha ? new Date(m.fecha).toLocaleString('es-ES') : '—';
                 const badge = m.tipo === 'ENTRADA' ? 'badge-stock' : 'badge-danger';
 
+                let qty = m.cantidad;
+                if (m.tipo === 'SALIDA' && qty > 0) qty = -qty;
+                const qtyDisplay = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '—';
+                const qtyColor = qty > 0 ? 'var(--success)' : (qty < 0 ? 'var(--error)' : 'inherit');
+
                 body.innerHTML += `
                     <tr>
                         <td>#${m.id}</td>
                         <td><span class="badge ${badge}">${m.tipo}</span></td>
                         <td style="font-weight:600;">${nombre}</td>
                         <td>${provNombre}</td>
-                        <td style="font-weight:700;">${m.cantidad}</td>
+                        <td style="font-weight:700; color:${qtyColor};">${qtyDisplay}</td>
                         <td>${m.stockResultante ?? '—'}</td>
                         <td style="color:var(--text-secondary); font-size:0.85rem;">${m.usuarioEmail ?? '—'}</td>
                         <td style="color:var(--text-secondary); font-size:0.85rem;">${fecha}</td>

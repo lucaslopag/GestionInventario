@@ -92,7 +92,7 @@ public class InventarioService {
         auditar("GET_STOCK", productoId, usuarioEmail, "Consulta de stock", productoId, null, null, null);
         Stock stock = stockRepository.findByProductoId(productoId).orElse(null);
         if (stock == null) {
-            return null;
+            return new StockDTO(productoId, 0);
         }
         return mapToStockDTO(stock);
     }

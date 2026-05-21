@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body style="display: block;">
 
     <div class="dashboard-container">
@@ -18,7 +20,8 @@
                 <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
                 <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
                 <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
+                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i
+                        data-lucide="users"></i> Usuarios</a>
             </nav>
         </aside>
 
@@ -33,22 +36,25 @@
                 <div class="search-box" style="flex: 1; min-width: 250px;">
                     <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU...">
                 </div>
-                
+
                 <select id="filterCategoria" class="filter-select">
                     <option value="">Todas las categorías</option>
                 </select>
-                
+
                 <select id="filterActivo" class="filter-select">
                     <option value="activos">Solo Activos</option>
                     <option value="inactivos">Solo Inactivos</option>
                     <option value="todos">Todos</option>
                 </select>
-                
+
                 <!-- Filtro Precio en un rectángulo -->
-                <div style="display:flex; align-items:center; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.2); overflow: hidden;">
-                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01" style="width: 100px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none;">
+                <div
+                    style="display:flex; align-items:center; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.2); overflow: hidden;">
+                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01"
+                        style="width: 100px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none;">
                     <div style="width: 1px; height: 20px; background: var(--border);"></div>
-                    <select id="filterPrecioOp" style="min-width: 110px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none; cursor: pointer; appearance: auto;">
+                    <select id="filterPrecioOp"
+                        style="min-width: 110px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none; cursor: pointer; appearance: auto;">
                         <option value=">=" style="background: #1e222d; color: white;">Más de (≥)</option>
                         <option value="<=" style="background: #1e222d; color: white;">Menos de (≤)</option>
                         <option value="=" style="background: #1e222d; color: white;">Igual a (=)</option>
@@ -58,24 +64,32 @@
                 <!-- Contenedor para el toggle de columnas -->
                 <div id="colToggleContainer" style="margin-left: 0.5rem;"></div>
 
-                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Producto</button>
+                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo
+                    Producto</button>
             </div>
 
             <!-- Búsqueda en Servidor (API Backend) -->
-            <div class="filters-bar" style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
-                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="server" style="width:16px;"></i> Búsqueda en BD:</span>
-                
+            <div class="filters-bar"
+                style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
+                <span
+                    style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i
+                        data-lucide="server" style="width:16px;"></i> Búsqueda en BD:</span>
+
                 <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <input type="text" id="apiSearchNombre" placeholder="Buscar por Nombre..." style="width: 220px; padding: 0.6rem; border-radius: 8px;">
+                    <input type="text" id="apiSearchNombre" placeholder="Buscar por Nombre..."
+                        style="width: 220px; padding: 0.6rem; border-radius: 8px;">
                     <button id="btnApiNombre" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar</button>
                 </div>
-                
+
                 <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <input type="text" id="apiSearchSku" placeholder="Buscar SKU exacto..." style="width: 180px; padding: 0.6rem; border-radius: 8px;">
+                    <input type="text" id="apiSearchSku" placeholder="Buscar SKU exacto..."
+                        style="width: 180px; padding: 0.6rem; border-radius: 8px;">
                     <button id="btnApiSku" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar SKU</button>
                 </div>
-                
-                <button id="btnResetApi" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;" title="Limpiar Búsqueda en BD y Recargar"><i data-lucide="refresh-cw" style="width:16px;"></i></button>
+
+                <button id="btnResetApi" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;"
+                    title="Limpiar Búsqueda en BD y Recargar"><i data-lucide="refresh-cw"
+                        style="width:16px;"></i></button>
             </div>
 
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
@@ -153,18 +167,18 @@
             try {
                 const u = JSON.parse(userRaw);
                 isAdmin = (u.rol || '').toUpperCase() === 'ADMIN';
-            } catch(e) {}
+            } catch (e) { }
         }
 
-        const productsBody   = document.getElementById('productsBody');
-        const searchInput    = document.getElementById('searchInput');
+        const productsBody = document.getElementById('productsBody');
+        const searchInput = document.getElementById('searchInput');
         const filterCategoria = document.getElementById('filterCategoria');
-        const filterActivo   = document.getElementById('filterActivo');
+        const filterActivo = document.getElementById('filterActivo');
         const filterPrecioOp = document.getElementById('filterPrecioOp');
         const filterPrecioVal = document.getElementById('filterPrecioVal');
-        const modal          = document.getElementById('modalOverlay');
-        const modalMsg       = document.getElementById('modalMsg');
-        const productForm    = document.getElementById('productForm');
+        const modal = document.getElementById('modalOverlay');
+        const modalMsg = document.getElementById('modalMsg');
+        const productForm = document.getElementById('productForm');
 
         // Ocultar botón añadir y columna acciones si no es ADMIN
         if (!isAdmin) {
@@ -175,26 +189,26 @@
         function getPool() {
             const estado = filterActivo.value;
             if (estado === 'inactivos') return allInactivos;
-            if (estado === 'activos')   return allProducts;
+            if (estado === 'activos') return allProducts;
             return [...allProducts, ...allInactivos];
         }
 
         function getFilteredProducts() {
-            const term   = searchInput.value.toLowerCase();
-            const cat    = filterCategoria.value;
+            const term = searchInput.value.toLowerCase();
+            const cat = filterCategoria.value;
             const precioOp = filterPrecioOp.value;
             const precioVal = filterPrecioVal.value ? parseFloat(filterPrecioVal.value) : null;
 
             return getPool().filter(p => {
                 const precio_v = p.precioNeto ?? p.precio ?? 0;
-                const matchTerm  = !term  || p.nombre.toLowerCase().includes(term) || (p.sku || '').toLowerCase().includes(term);
-                const matchCat   = !cat   || (p.categoria || '') === cat;
+                const matchTerm = !term || p.nombre.toLowerCase().includes(term) || (p.sku || '').toLowerCase().includes(term);
+                const matchCat = !cat || (p.categoria || '') === cat;
 
                 let matchPrecio = true;
                 if (precioVal !== null && !isNaN(precioVal)) {
                     if (precioOp === '>=') matchPrecio = precio_v >= precioVal;
                     if (precioOp === '<=') matchPrecio = precio_v <= precioVal;
-                    if (precioOp === '=')  matchPrecio = Math.abs(precio_v - precioVal) < 0.01;
+                    if (precioOp === '=') matchPrecio = Math.abs(precio_v - precioVal) < 0.01;
                 }
 
                 return matchTerm && matchCat && matchPrecio;
@@ -211,12 +225,12 @@
                 return;
             }
             data.forEach(p => {
-                const stock       = stockMap[p.id] ?? 0;
+                const stock = stockMap[p.id] ?? 0;
                 const stockStatus = stock === 0 ? 'badge-danger' : (stock < 10 ? 'badge-warning' : 'badge-stock');
-                const stockText   = stock === 0 ? 'Sin Stock'  : (stock < 10 ? 'Stock Bajo'  : 'Disponible');
-                const precio      = (p.precioNeto ?? p.precio ?? 0).toFixed(2);
-                const activo      = p.activo !== false;
-                const rowStyle    = !activo ? 'opacity:0.5; filter:grayscale(0.5);' : '';
+                const stockText = stock === 0 ? 'Sin Stock' : (stock < 10 ? 'Stock Bajo' : 'Disponible');
+                const precio = (p.precioNeto ?? p.precio ?? 0).toFixed(2);
+                const activo = p.activo !== false;
+                const rowStyle = !activo ? 'opacity:0.5; filter:grayscale(0.5);' : '';
 
                 const accionesHtml = isAdmin ? `
                     <td style="display:flex; gap:0.5rem;">
@@ -254,8 +268,8 @@
                     api.get('/inventario/stock')
                 ]);
 
-                allProducts  = (prodActivos.status  === 'fulfilled' && !prodActivos.value.error)
-                    ? (Array.isArray(prodActivos.value)  ? prodActivos.value  : (prodActivos.value.content  ?? []))
+                allProducts = (prodActivos.status === 'fulfilled' && !prodActivos.value.error)
+                    ? (Array.isArray(prodActivos.value) ? prodActivos.value : (prodActivos.value.content ?? []))
                     : [];
 
                 allInactivos = (prodInactivos.status === 'fulfilled' && !prodInactivos.value.error)
@@ -306,10 +320,10 @@
             const p = allPool.find(x => x.id === id);
             if (!p) return;
             document.getElementById('modalTitle').textContent = 'Editar Producto';
-            document.getElementById('prodId').value    = p.id;
-            document.getElementById('prodName').value  = p.nombre;
-            document.getElementById('prodCat').value   = p.categoria ?? '';
-            document.getElementById('prodSku').value   = p.sku ?? '';
+            document.getElementById('prodId').value = p.id;
+            document.getElementById('prodName').value = p.nombre;
+            document.getElementById('prodCat').value = p.categoria ?? '';
+            document.getElementById('prodSku').value = p.sku ?? '';
             document.getElementById('prodPrice').value = p.precioNeto ?? p.precio ?? '';
             document.getElementById('submitBtn').textContent = 'Actualizar Producto';
             modalMsg.style.display = 'none';
@@ -331,7 +345,7 @@
             e.preventDefault();
             const id = document.getElementById('prodId').value;
             const body = {
-                nombre:    document.getElementById('prodName').value.trim(),
+                nombre: document.getElementById('prodName').value.trim(),
                 categoria: document.getElementById('prodCat').value.trim(),
                 precioNeto: parseFloat(document.getElementById('prodPrice').value),
                 sku: document.getElementById('prodSku').value.trim() || undefined
@@ -362,10 +376,10 @@
             try {
                 const resActivos = await api.get(`/productos/buscar?nombre=${term}`);
                 const resInactivos = await api.get(`/productos/inactivos/buscar?nombre=${term}`);
-                
+
                 allProducts = (!resActivos.error) ? (Array.isArray(resActivos) ? resActivos : (resActivos.content ?? [])) : [];
                 allInactivos = (!resInactivos.error) ? (Array.isArray(resInactivos) ? resInactivos : (resInactivos.content ?? [])) : [];
-                
+
                 // Reset local filters to show API results clearly
                 searchInput.value = '';
                 filterCategoria.value = '';
@@ -411,4 +425,5 @@
         });
     </script>
 </body>
+
 </html>

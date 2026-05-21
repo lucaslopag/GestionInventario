@@ -140,8 +140,6 @@
             const accion   = filterAccion.value.toUpperCase();
             const servicio = filterServicio.value.toUpperCase();
             const usuario  = filterUsuario.value.toLowerCase();
-            const desde    = filterDesde.value ? new Date(filterDesde.value) : null;
-            const hasta    = filterHasta.value ? new Date(filterHasta.value + 'T23:59:59') : null;
 
             return allHistory.filter(h => {
                 const accionVal   = (h.accion ?? h.tipo ?? '').toUpperCase();
@@ -149,16 +147,13 @@
                 const servicioVal = (h.servicioOrigen ?? '').toUpperCase();
                 const usuarioVal  = (h.usuarioEmail ?? '').toLowerCase();
                 const entidad     = (h.nombreProducto ?? h.detalles ?? `#${h.entidadId ?? h.productoId ?? ''}` ?? '').toLowerCase();
-                const fecha       = h.fecha ? new Date(h.fecha) : null;
 
                 const matchTerm     = !term     || usuarioVal.includes(term) || entidad.includes(term) || accionVal.toLowerCase().includes(term) || detalleVal.toLowerCase().includes(term);
                 const matchAccion   = !accion   || accionVal.includes(accion) || detalleVal.includes(accion);
                 const matchServicio = !servicio || servicioVal === servicio;
                 const matchUsuario  = !usuario  || usuarioVal.includes(usuario);
-                const matchDesde    = !desde    || (fecha && fecha >= desde);
-                const matchHasta    = !hasta    || (fecha && fecha <= hasta);
 
-                return matchTerm && matchAccion && matchServicio && matchUsuario && matchDesde && matchHasta;
+                return matchTerm && matchAccion && matchServicio && matchUsuario;
             });
         }
 
@@ -186,9 +181,15 @@
                 const fecha      = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '—';
                 const usuario    = h.usuarioEmail ?? '—';
                 const entidad    = h.nombreProducto ?? (h.productoId ? `Producto #${h.productoId}` : (h.proveedorId ? `Proveedor #${h.proveedorId}` : `#${h.entidadId ?? '—'}`));
-                const cantidad   = h.cantidad != null ? (h.cantidad > 0 ? `+${h.cantidad}` : `${h.cantidad}`) : '—';
-                const colorCant  = h.cantidad > 0 ? 'var(--success)' : h.cantidad < 0 ? 'var(--error)' : 'var(--text-secondary)';
                 const detalle    = h.detalles ?? '—';
+
+                let qty = h.cantidad;
+                if (qty != null && (accion.includes('SALIDA') || accion.includes('OUT') || detalle.toUpperCase().includes('SALIDA'))) {
+                    if (qty > 0) qty = -qty;
+                }
+
+                const cantidad   = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '—';
+                const colorCant  = qty > 0 ? 'var(--success)' : qty < 0 ? 'var(--error)' : 'var(--text-secondary)';
 
                 let badgeClass = 'badge-warning';
                 if (accion.includes('ENTRADA') || accion.includes('IN'))  badgeClass = 'badge-stock';
@@ -217,8 +218,14 @@
         async function loadHistory() {
             historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando registros...</td></tr>';
             try {
-                // Carga hasta 500 registros para filtrado local
-                const data = await api.get('/auditoria?size=500&page=0');
+                let url = '/auditoria?size=500&page=0';
+                if (filterDesde.value) {
+                    url += `&desde=${filterDesde.value}`;
+                }
+                if (filterHasta.value) {
+                    url += `&hasta=${filterHasta.value}`;
+                }
+                const data = await api.get(url);
                 allHistory = data.content ?? (Array.isArray(data) ? data : []);
                 currentPage = 0;
                 renderPage();
@@ -228,12 +235,13 @@
         }
 
         function applyFilters() { currentPage = 0; renderPage(); }
+        async function handleDateChange() { await loadHistory(); }
 
         searchInput.addEventListener('input', applyFilters);
         filterAccion.addEventListener('change', applyFilters);
         filterServicio.addEventListener('change', applyFilters);
-        filterDesde.addEventListener('change', applyFilters);
-        filterHasta.addEventListener('change', applyFilters);
+        filterDesde.addEventListener('change', handleDateChange);
+        filterHasta.addEventListener('change', handleDateChange);
         filterUsuario.addEventListener('input', applyFilters);
 
         document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
@@ -243,7 +251,7 @@
             filterDesde.value = '';
             filterHasta.value = '';
             filterUsuario.value = '';
-            applyFilters();
+            loadHistory();
         });
 
         document.getElementById('btnRecargar').addEventListener('click', loadHistory);
