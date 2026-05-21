@@ -254,6 +254,10 @@
                     </tr>
                 `;
             });
+            console.log('--- DEBUG renderProducts ---');
+            console.log('Data length:', data.length);
+            console.log('Admin Status:', isAdmin);
+            console.log('HTML length inside productsBody:', productsBody.innerHTML.length);
             lucide.createIcons();
         }
 
@@ -330,14 +334,17 @@
             modal.style.display = 'flex';
         }
 
-        document.getElementById('openModalBtn').onclick = () => {
-            document.getElementById('modalTitle').textContent = 'Añadir Producto';
-            document.getElementById('prodId').value = '';
-            document.getElementById('submitBtn').textContent = 'Guardar Producto';
-            productForm.reset();
-            modalMsg.style.display = 'none';
-            modal.style.display = 'flex';
-        };
+        const openModalBtn = document.getElementById('openModalBtn');
+        if (openModalBtn) {
+            openModalBtn.onclick = () => {
+                document.getElementById('modalTitle').textContent = 'Añadir Producto';
+                document.getElementById('prodId').value = '';
+                document.getElementById('submitBtn').textContent = 'Guardar Producto';
+                productForm.reset();
+                modalMsg.style.display = 'none';
+                modal.style.display = 'flex';
+            };
+        }
         document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
         window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
 

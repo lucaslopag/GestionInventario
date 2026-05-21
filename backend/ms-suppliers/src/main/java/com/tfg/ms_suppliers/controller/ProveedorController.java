@@ -1,5 +1,6 @@
 package com.tfg.ms_suppliers.controller;
 
+import com.tfg.ms_suppliers.annotation.RequireRole;
 import com.tfg.ms_suppliers.dto.ProveedorDTO;
 import com.tfg.ms_suppliers.service.ProveedorService;
 import jakarta.validation.Valid;
@@ -32,13 +33,22 @@ public class ProveedorController {
     }
 
     @PostMapping
-    public ResponseEntity<ProveedorDTO> create(@Valid @RequestBody ProveedorDTO proveedorDTO, @RequestHeader("X-User-Email") String usuarioEmail) {
+    @RequireRole("ADMIN")
+    public ResponseEntity<ProveedorDTO> create(
+            @Valid @RequestBody ProveedorDTO proveedorDTO,
+            @RequestHeader("X-User-Email") String usuarioEmail,
+            @RequestHeader(value = "X-User-Roles", required = false) String userRoles) {
         ProveedorDTO nuevoProveedor = proveedorService.save(proveedorDTO, usuarioEmail);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProveedor);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorDTO> update(@PathVariable Long id, @Valid @RequestBody ProveedorDTO proveedorDTO, @RequestHeader("X-User-Email") String usuarioEmail) {
+    @RequireRole("ADMIN")
+    public ResponseEntity<ProveedorDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ProveedorDTO proveedorDTO,
+            @RequestHeader("X-User-Email") String usuarioEmail,
+            @RequestHeader(value = "X-User-Roles", required = false) String userRoles) {
         ProveedorDTO actualizado = proveedorService.update(id, proveedorDTO, usuarioEmail);
         if (actualizado == null) {
             return ResponseEntity.notFound().build();
@@ -47,8 +57,13 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id, @RequestHeader("X-User-Email") String usuarioEmail) {
+    @RequireRole("ADMIN")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Email") String usuarioEmail,
+            @RequestHeader(value = "X-User-Roles", required = false) String userRoles) {
         proveedorService.delete(id, usuarioEmail);
         return ResponseEntity.noContent().build();
     }
 }
+

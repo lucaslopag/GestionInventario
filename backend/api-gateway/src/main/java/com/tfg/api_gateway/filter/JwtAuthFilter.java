@@ -58,8 +58,18 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     .getBody();
             
             String email = claims.getSubject();
-            String rolesStr = claims.get("roles", String.class);
-            List<String> roles = rolesStr != null ? List.of(rolesStr.split(",")) : List.of();
+            String rolFromClaims = claims.get("roles", String.class);
+            
+            // Validar que el rol existe
+            if (rolFromClaims == null || rolFromClaims.trim().isEmpty()) {
+                System.err.println("[WARN] Token sin rol definido para: " + email);
+                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                return exchange.getResponse().setComplete();
+            }
+            
+            // Normalizar roles (eliminar espacios, convertir a mayúsculas)
+            String normalizedRole = rolFromClaims.trim().toUpperCase();
+            List<String> roles = List.of(normalizedRole.split("\\s*,\\s*"));
 
             if (!isAuthorized(path, method, roles)) {
                 exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
@@ -68,7 +78,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
             ServerHttpRequest mutatedRequest = request.mutate()
                     .header("X-User-Email", email)
-                    .header("X-User-Roles", rolesStr)
+                    .header("X-User-Roles", normalizedRole)
                     .build();
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
@@ -92,7 +102,15 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
            if (!"GET".equalsIgnoreCase(method.name()) && !isAdmin) return false;
         }
 
-        return true; // Por defecto permitir si el token es válido
+        // Por defecto permitir si el token es válido
+        return true;
+    }
+
+    private boolean isWriteMethod(HttpMethod method) {
+        return HttpMethod.POST.equals(method) || 
+               HttpMethod.PUT.equals(method) || 
+               HttpMethod.DELETE.equals(method) ||
+               HttpMethod.PATCH.equals(method);
     }
 
 private boolean isPublicRoute(String path) {
