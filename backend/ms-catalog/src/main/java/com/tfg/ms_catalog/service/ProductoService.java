@@ -142,7 +142,7 @@ public class ProductoService {
         dto.setSku(producto.getSku());
         dto.setPrecioNeto(producto.getPrecioNeto());
         dto.setCategoria(producto.getCategoria());
-        dto.setActivo(producto.isActivo());
+        dto.setActivo(producto.getActivo() != null ? producto.getActivo() : true);
         return dto;
     }
 

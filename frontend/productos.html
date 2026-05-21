@@ -168,7 +168,8 @@
 
         // Ocultar botón añadir y columna acciones si no es ADMIN
         if (!isAdmin) {
-            document.getElementById('openModalBtn').style.display = 'none';
+            document.getElementById('openModalBtn')?.remove();
+            document.getElementById('accionesHeader')?.remove();
         }
 
         function getPool() {
@@ -224,7 +225,7 @@
                             <i data-lucide="${activo ? 'archive' : 'rotate-ccw'}"></i>
                         </button>
                         ${!activo ? `<button onclick="deleteFisico(${p.id})" class="btn-icon" style="background:var(--error); color:white; border:none;" title="Borrar Físicamente de la BD"><i data-lucide="trash-2"></i></button>` : ''}
-                    </td>` : `<td>—</td>`;
+                    </td>` : '';
 
                 productsBody.innerHTML += `
                     <tr style="${rowStyle}">

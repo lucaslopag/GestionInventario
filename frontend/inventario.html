@@ -313,6 +313,7 @@
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = true;
                 document.querySelector('input[name="moveType"][value="IN"]').checked = true;
                 provGroup.style.display = 'block';
+                document.getElementById('adjProveedor').required = true;
             } else {
                 stockAlert.textContent = `Stock actual: ${currentStock} unidades.`;
                 stockAlert.style.display = 'block';
@@ -320,14 +321,18 @@
                 stockAlert.style.color = 'var(--accent)';
                 stockAlert.style.borderColor = 'rgba(0,210,255,0.2)';
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = false;
-                provGroup.style.display = document.querySelector('input[name="moveType"]:checked').value === 'IN' ? 'block' : 'none';
+                const isIN = document.querySelector('input[name="moveType"]:checked').value === 'IN';
+                provGroup.style.display = isIN ? 'block' : 'none';
+                document.getElementById('adjProveedor').required = isIN;
             }
             modal.style.display = 'flex';
         }
 
         document.querySelectorAll('input[name="moveType"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                document.getElementById('provGroup').style.display = e.target.value === 'IN' ? 'block' : 'none';
+                const isIN = e.target.value === 'IN';
+                document.getElementById('provGroup').style.display = isIN ? 'block' : 'none';
+                document.getElementById('adjProveedor').required = isIN;
             });
         });
 

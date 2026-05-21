@@ -23,7 +23,7 @@ public class Producto {
     private Double precioNeto;
     @Column
     private String categoria;
-    @Column(nullable = false)
-    private boolean activo;
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Boolean activo;
 
 }

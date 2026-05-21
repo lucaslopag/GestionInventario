@@ -53,7 +53,7 @@
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Dirección</th>
-                            <th>Acciones</th>
+                            <th id="accionesHeader">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="providersBody"></tbody>
@@ -100,6 +100,15 @@
     <script>
         lucide.createIcons();
 
+        let isAdmin = false;
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+            try {
+                const u = JSON.parse(userRaw);
+                isAdmin = (u.rol || '').toUpperCase() === 'ADMIN';
+            } catch(e) {}
+        }
+
         let allProviders = [];
 
         const providersBody = document.getElementById('providersBody');
@@ -108,6 +117,11 @@
         const modal         = document.getElementById('modalOverlay');
         const modalMsg      = document.getElementById('modalMsg');
         const providerForm  = document.getElementById('providerForm');
+
+        if (!isAdmin) {
+            document.getElementById('openModalBtn')?.remove();
+            document.getElementById('accionesHeader')?.remove();
+        }
 
         function getFiltered() {
             const term  = searchInput.value.toLowerCase();
@@ -140,10 +154,11 @@
                         <td style="font-weight: 600;">${p.nombre}</td>
                         <td style="color: var(--accent);">${p.email}</td>
                         <td>${p.direccion ?? '—'}</td>
+                        ${isAdmin ? `
                         <td style="display:flex; gap:0.5rem;">
                             <button onclick="editProvider(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
                             <button onclick="deleteProvider(${p.id})" class="btn-icon btn-danger" title="Eliminar"><i data-lucide="trash-2"></i></button>
-                        </td>
+                        </td>` : ''}
                     </tr>
                 `;
             });

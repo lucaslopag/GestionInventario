@@ -10,16 +10,7 @@
         .detalle-cell {
             color: var(--text-secondary); 
             font-size: 0.85rem; 
-            max-width: 200px; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap;
             transition: all 0.2s ease;
-        }
-        .expanded-detalle .detalle-cell {
-            white-space: normal;
-            max-width: none;
-            overflow: visible;
         }
         tr.clickable-row {
             cursor: pointer;
@@ -154,13 +145,14 @@
 
             return allHistory.filter(h => {
                 const accionVal   = (h.accion ?? h.tipo ?? '').toUpperCase();
+                const detalleVal  = (h.detalles ?? '').toUpperCase();
                 const servicioVal = (h.servicioOrigen ?? '').toUpperCase();
                 const usuarioVal  = (h.usuarioEmail ?? '').toLowerCase();
                 const entidad     = (h.nombreProducto ?? h.detalles ?? `#${h.entidadId ?? h.productoId ?? ''}` ?? '').toLowerCase();
                 const fecha       = h.fecha ? new Date(h.fecha) : null;
 
-                const matchTerm     = !term     || usuarioVal.includes(term) || entidad.includes(term) || accionVal.toLowerCase().includes(term);
-                const matchAccion   = !accion   || accionVal.includes(accion);
+                const matchTerm     = !term     || usuarioVal.includes(term) || entidad.includes(term) || accionVal.toLowerCase().includes(term) || detalleVal.toLowerCase().includes(term);
+                const matchAccion   = !accion   || accionVal.includes(accion) || detalleVal.includes(accion);
                 const matchServicio = !servicio || servicioVal === servicio;
                 const matchUsuario  = !usuario  || usuarioVal.includes(usuario);
                 const matchDesde    = !desde    || (fecha && fecha >= desde);
@@ -216,7 +208,7 @@
                         <td>${svcLabel ? `<span class="badge ${svcClass}">${svcLabel}</span>` : '—'}</td>
                         <td style="font-weight:500;">${entidad}</td>
                         <td style="font-weight: 700; color: ${colorCant};">${cantidad}</td>
-                        <td class="detalle-cell" title="Clic para expandir/colapsar">${detalle}</td>
+                        <td class="detalle-cell">${detalle}</td>
                     </tr>
                 `;
             });
