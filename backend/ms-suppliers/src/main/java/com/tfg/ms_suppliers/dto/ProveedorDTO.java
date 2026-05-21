@@ -19,4 +19,7 @@ public class ProveedorDTO {
     @Email(message = "El email debe ser valido")
     @NotBlank(message = "El email no puede estar vacio")
     private String email;
+
+    @NotBlank(message = "La direccion no puede estar vacia")
+    private String direccion;
 }
