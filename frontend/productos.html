@@ -61,6 +61,23 @@
                 <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Producto</button>
             </div>
 
+            <!-- Búsqueda en Servidor (API Backend) -->
+            <div class="filters-bar" style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="server" style="width:16px;"></i> Búsqueda en BD:</span>
+                
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <input type="text" id="apiSearchNombre" placeholder="Buscar por Nombre..." style="width: 220px; padding: 0.6rem; border-radius: 8px;">
+                    <button id="btnApiNombre" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar</button>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <input type="text" id="apiSearchSku" placeholder="Buscar SKU exacto..." style="width: 180px; padding: 0.6rem; border-radius: 8px;">
+                    <button id="btnApiSku" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar SKU</button>
+                </div>
+                
+                <button id="btnResetApi" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;" title="Limpiar Búsqueda en BD y Recargar"><i data-lucide="refresh-cw" style="width:16px;"></i></button>
+            </div>
+
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
             <!-- Tabla -->
@@ -330,18 +347,62 @@
             await loadProducts();
         };
 
-        searchInput.addEventListener('input', async (e) => {
-            // Si el usuario escribe algo específico que requiera endpoints de API directa (ej: SKU exacto o Búsqueda Nombre)
-            const term = e.target.value.trim();
-            // Para mantener la agilidad UX, usamos filtrado local por defecto,
-            // pero si la bbdd es grande, los controllers de /buscar y /sku/{sku} están expuestos en el backend
-            // y los filtramos internamente en JS para respuesta instantánea.
-            applyFilters();
-        });
+        searchInput.addEventListener('input', applyFilters);
         filterCategoria.addEventListener('change', applyFilters);
         filterActivo.addEventListener('change', applyFilters);
         filterPrecioOp.addEventListener('change', applyFilters);
         filterPrecioVal.addEventListener('input', applyFilters);
+
+        // Lógica de Búsqueda en Servidor
+        document.getElementById('btnApiNombre').addEventListener('click', async () => {
+            const term = document.getElementById('apiSearchNombre').value.trim();
+            if (!term) return;
+            document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;">Buscando en servidor...</td></tr>';
+            try {
+                const resActivos = await api.get(`/productos/buscar?nombre=${term}`);
+                const resInactivos = await api.get(`/productos/inactivos/buscar?nombre=${term}`);
+                
+                allProducts = (!resActivos.error) ? (Array.isArray(resActivos) ? resActivos : (resActivos.content ?? [])) : [];
+                allInactivos = (!resInactivos.error) ? (Array.isArray(resInactivos) ? resInactivos : (resInactivos.content ?? [])) : [];
+                
+                // Reset local filters to show API results clearly
+                searchInput.value = '';
+                filterCategoria.value = '';
+                applyFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById('btnApiSku').addEventListener('click', async () => {
+            const sku = document.getElementById('apiSearchSku').value.trim();
+            if (!sku) return;
+            document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;">Buscando en servidor...</td></tr>';
+            try {
+                const res = await api.get(`/productos/sku/${sku}`);
+                allProducts = [];
+                allInactivos = [];
+                if (!res.error && res.id) {
+                    if (res.activo) allProducts.push(res);
+                    else allInactivos.push(res);
+                } else {
+                    document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--error);">SKU no encontrado en BD.</td></tr>';
+                    document.getElementById('resultCount').textContent = 'Resultados: 0';
+                    return;
+                }
+                searchInput.value = '';
+                filterCategoria.value = '';
+                applyFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById('btnResetApi').addEventListener('click', () => {
+            document.getElementById('apiSearchNombre').value = '';
+            document.getElementById('apiSearchSku').value = '';
+            loadProducts();
+        });
 
         loadProducts().then(() => {
             initTableUtils('productsTable', 'colToggleContainer');

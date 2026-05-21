@@ -51,6 +51,18 @@
                 <div id="colToggleContainer" style="margin-left: auto;"></div>
             </div>
 
+            <!-- Búsqueda en Servidor (API Backend) para Stock -->
+            <div class="filters-bar" style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="server" style="width:16px;"></i> Consulta en BD:</span>
+                
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <input type="number" id="apiSearchStockId" placeholder="ID del Producto..." style="width: 180px; padding: 0.6rem; border-radius: 8px;">
+                    <button id="btnApiStock" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar Stock</button>
+                </div>
+                
+                <button id="btnResetApiStock" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;" title="Limpiar y recargar"><i data-lucide="refresh-cw" style="width:16px;"></i></button>
+            </div>
+
             <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
 
             <!-- Tabla Stock -->
@@ -357,6 +369,49 @@
         filterNivel.addEventListener('change', applyFilters);
         filterCat.addEventListener('change', applyFilters);
         filterOrden.addEventListener('change', applyFilters);
+
+        // Lógica de Búsqueda de Stock en Servidor
+        document.getElementById('btnApiStock').addEventListener('click', async () => {
+            const prodId = document.getElementById('apiSearchStockId').value.trim();
+            if (!prodId) return;
+            
+            document.getElementById('inventoryBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Consultando stock en servidor...</td></tr>';
+            try {
+                const [stockRes, prodRes] = await Promise.allSettled([
+                    api.get(`/inventario/stock/${prodId}`),
+                    api.get(`/productos/${prodId}`)
+                ]);
+                
+                if (stockRes.status === 'fulfilled' && !stockRes.value.error && stockRes.value.productoId) {
+                    const stockData = stockRes.value;
+                    let prodData = { nombre: 'Producto #'+prodId, categoria: 'Desconocida' };
+                    if (prodRes.status === 'fulfilled' && !prodRes.value.error) {
+                        prodData = prodRes.value;
+                    }
+                    allProducts = [{
+                        ...prodData,
+                        productoId: stockData.productoId,
+                        cantidadDisponible: stockData.cantidadDisponible
+                    }];
+                } else {
+                    allProducts = [];
+                    document.getElementById('inventoryBody').innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--error);">Stock no encontrado para este ID.</td></tr>';
+                    document.getElementById('resultCount').textContent = 'Resultados: 0';
+                    return;
+                }
+                searchInput.value = '';
+                filterNivel.value = '';
+                filterCat.value = '';
+                applyFilters();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById('btnResetApiStock').addEventListener('click', () => {
+            document.getElementById('apiSearchStockId').value = '';
+            loadInventory();
+        });
 
         // ── HISTORIAL DE MOVIMIENTOS ──────────────────────────────────────────
         let allMovimientos = [];
