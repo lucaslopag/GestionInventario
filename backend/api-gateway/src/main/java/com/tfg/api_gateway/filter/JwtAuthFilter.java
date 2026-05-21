@@ -82,8 +82,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     private boolean isAuthorized(String path, HttpMethod method, List<String> roles) {
         boolean isAdmin = roles.contains("ADMIN");
         
-        // Rutas de Auditoría: Solo ADMIN
-        if (path.startsWith("/api/auditoria") && !isAdmin) return false;
+        // Rutas de Auditoría: solo ADMIN puede hacer peticiones que no sean GET
+        if (path.startsWith("/api/auditoria") && !HttpMethod.GET.equals(method) && !isAdmin) return false;
 
         // Rutas de Catálogo y Proveedores:
         // GET: Permitido para todos (ADMIN/EMPLEADO)
