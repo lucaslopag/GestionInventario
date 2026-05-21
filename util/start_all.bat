@@ -35,19 +35,19 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :5500') do (
     )
 )
 
-:: --- 2. EUREKA SERVER ---
-echo  [1/8] Lanzando EUREKA-SERVER en puerto 8761...
-start "EUREKA-SERVER" cmd /k "cd /d ""%~dp0..\backend\eureka-server"" && mvnw spring-boot:run"
-
-echo  [?] Esperando 15 segundos a que Eureka este operativo...
-timeout /t 15 /nobreak > nul
-
-:: --- 3. INFRAESTRUCTURA LOCAL ---
+:: --- 2. INFRAESTRUCTURA LOCAL (antes de Eureka para dar tiempo a arrancar) ---
 echo  [2/8] Iniciando RABBITMQ...
 net start RabbitMQ 2>nul
 echo  [3/8] Iniciando MYSQL...
-net start MySQL 2>nul
+net start MySQL95 2>nul
 echo.
+
+:: --- 3. EUREKA SERVER ---
+echo  [1/8] Lanzando EUREKA-SERVER en puerto 8761...
+start "EUREKA-SERVER" cmd /k "cd /d ""%~dp0..\backend\eureka-server"" && mvnw spring-boot:run"
+
+echo  [?] Esperando 15 segundos a que Eureka y la BD esten operativos...
+timeout /t 15 /nobreak > nul
 
 :: --- 4. MS-USERS (Autenticacion) ---
 echo  [4/8] Lanzando MS-USERS...

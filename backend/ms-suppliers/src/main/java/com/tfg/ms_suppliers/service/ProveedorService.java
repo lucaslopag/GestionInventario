@@ -62,7 +62,6 @@ public class ProveedorService {
         }
 
         proveedorExistente.setNombre(proveedorDTO.getNombre());
-        proveedorExistente.setDireccion(proveedorDTO.getDireccion());
         proveedorExistente.setEmail(proveedorDTO.getEmail());
         
         ProveedorDTO actualizado = mapToDTO(proveedorRepository.save(proveedorExistente));
@@ -79,7 +78,6 @@ public class ProveedorService {
         ProveedorDTO proveedorDTO = new ProveedorDTO();
         proveedorDTO.setId(proveedor.getId());
         proveedorDTO.setNombre(proveedor.getNombre());
-        proveedorDTO.setDireccion(proveedor.getDireccion());
         proveedorDTO.setEmail(proveedor.getEmail());
         return proveedorDTO;
     }
@@ -88,7 +86,6 @@ public class ProveedorService {
         Proveedor entity = new Proveedor();
         entity.setNombre(dto.getNombre());
         entity.setEmail(dto.getEmail());
-        entity.setDireccion(dto.getDireccion());
         return entity;
     }
 }

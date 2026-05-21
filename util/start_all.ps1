@@ -7,16 +7,16 @@ $frontendRoot = Join-Path $PSScriptRoot "..\frontend-react"
 
 Write-Host "`n [!] Iniciando despliegue local (Orden de Integracion)...`n" -ForegroundColor Cyan
 
+# 2 & 3. Infra (Iniciando antes de Eureka para dar tiempo a que carguen)
+Write-Host " [2/8] Iniciando RABBITMQ..." -ForegroundColor Gray
+Start-Service -Name "RabbitMQ" -ErrorAction SilentlyContinue
+Write-Host " [3/8] Iniciando MYSQL..." -ForegroundColor Gray
+Start-Service -Name "MySQL95" -ErrorAction SilentlyContinue
+
 # 1. Eureka
 Write-Host " [1/8] Lanzando EUREKA-SERVER..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendRoot\eureka-server'; ./mvnw spring-boot:run"
 Start-Sleep -Seconds 15
-
-# 2 & 3. Infra
-Write-Host " [2/8] Iniciando RABBITMQ..." -ForegroundColor Gray
-Start-Service -Name "RabbitMQ" -ErrorAction SilentlyContinue
-Write-Host " [3/8] Iniciando MYSQL..." -ForegroundColor Gray
-Start-Service -Name "MySQL" -ErrorAction SilentlyContinue
 
 # 4. Users
 Write-Host " [4/8] Lanzando MS-USERS..." -ForegroundColor Yellow
