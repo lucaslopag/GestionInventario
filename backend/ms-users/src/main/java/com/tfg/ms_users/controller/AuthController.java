@@ -20,8 +20,10 @@ public class AuthController {
     private String frontendUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.registrar(request));
+    public ResponseEntity<String> register(
+            @RequestBody RegisterRequest request,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesLlamante) {
+        return ResponseEntity.ok(authService.registrar(request, rolesLlamante));
     }
 
     @GetMapping("/confirmar")

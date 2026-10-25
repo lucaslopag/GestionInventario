@@ -23,6 +23,6 @@ public class AuditoriaEventoDTO {
     private Integer stockResultante;
 
     public static class AuditoriaEventoDTOBuilder {
-        // El builder de Lombok ya manejarÃ¡ los campos nuevos si se usa @Builder en la clase
+        // El builder de Lombok ya manejará los campos nuevos si se usa @Builder en la clase
     }
 }

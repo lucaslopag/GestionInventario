@@ -11,10 +11,10 @@ import jakarta.validation.constraints.*;
 public class ProductoDTO {
     private Long id;
 
-    @NotBlank(message = "El nombre del producto no puede estar vacÃ­o")
+    @NotBlank(message = "El nombre del producto no puede estar vacío")
     private String nombre;
 
-    @NotNull(message = "El precio neto no puede estar vacÃ­o")
+    @NotNull(message = "El precio neto no puede estar vacío")
     @Min(value = 0, message = "El precio neto debe ser mayor o igual a 0")
     private Double precioNeto;
     private String sku;

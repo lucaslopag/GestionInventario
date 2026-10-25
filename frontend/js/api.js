@@ -1,4 +1,4 @@
-// 🌐 Configuración Global de la API
+// Configuración Global de la API
 const API_BASE_URL = 'http://localhost:8080/api'; // Puerto del Gateway
 
 const api = {
@@ -86,3 +86,13 @@ const api = {
         return this._handle(response);
     }
 };
+
+// Escapa el texto antes de meterlo en innerHTML, para que un nombre o detalle no pueda ejecutar codigo
+function esc(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

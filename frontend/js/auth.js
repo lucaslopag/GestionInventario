@@ -1,4 +1,4 @@
-// 🔐 Seguridad y Sesión
+// Seguridad y Sesión
 (function() {
     const token = localStorage.getItem('token');
     const path = window.location.pathname;

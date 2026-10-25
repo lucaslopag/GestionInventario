@@ -7,29 +7,26 @@
         // --- User Profile Widget ---
         const profileEl = document.getElementById('sidebarUserProfile');
         if (profileEl) {
-            const initials = (user.nombre || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
             profileEl.innerHTML = `
                 <div class="sidebar-profile" id="profileToggle">
-                    <div class="profile-avatar">${initials}</div>
                     <div class="profile-info">
-                        <span class="profile-name">${user.nombre || 'Usuario'}</span>
-                        <span class="profile-role">${rol}</span>
+                        <span class="profile-name">${esc(user.nombre || 'Usuario')}</span>
+                        <span class="profile-role">${esc(rol)}</span>
                     </div>
-                    <i data-lucide="chevron-down" class="profile-chevron"></i>
                 </div>
-                <div class="profile-dropdown" id="profileDropdown" style="display:none;">
+                <div class="profile-dropdown oculto" id="profileDropdown">
                     <button class="profile-action" id="openProfileModalBtn">
-                        <i data-lucide="user"></i> Mi Perfil
+                        Mi Perfil
                     </button>
                     <button class="profile-action logout-action" id="logoutBtnSidebar">
-                        <i data-lucide="log-out"></i> Cerrar Sesión
+                        Cerrar Sesión
                     </button>
                 </div>
             `;
 
             document.getElementById('profileToggle').addEventListener('click', () => {
                 const dd = document.getElementById('profileDropdown');
-                dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+                dd.classList.toggle('oculto');
             });
 
             document.getElementById('logoutBtnSidebar').addEventListener('click', () => {
@@ -41,7 +38,7 @@
             if (openProfileBtn) {
                 openProfileBtn.addEventListener('click', () => {
                     const dd = document.getElementById('profileDropdown');
-                    dd.style.display = 'none';
+                    dd.classList.add('oculto');
                     openProfileModal(user);
                 });
             }
@@ -50,7 +47,7 @@
         // --- Show Usuarios link only for ADMIN ---
         const usuariosLink = document.getElementById('navUsuarios');
         if (usuariosLink) {
-            usuariosLink.style.display = rol === 'ADMIN' ? 'flex' : 'none';
+            usuariosLink.style.display = rol === 'ADMIN' ? 'block' : 'none';
         }
 
         // --- Legacy logout button support ---
@@ -74,27 +71,27 @@
         overlay.className = 'modal-overlay';
         overlay.style.display = 'flex';
         overlay.innerHTML = `
-            <div class="modal" style="max-width: 440px;">
+            <div class="modal">
                 <div class="modal-header">
                     <h3>Mi Perfil</h3>
-                    <button class="close-modal" id="closeProfileModal">&times;</button>
+                    <button class="close-modal" id="closeProfileModal">Cerrar</button>
                 </div>
-                <div id="profileMsg" class="alert" style="margin-bottom:1rem;"></div>
+                <div id="profileMsg" class="alert mb-1"></div>
                 <form id="profileForm">
                     <div class="form-group">
                         <label>Nombre</label>
-                        <input type="text" id="profileNombre" value="${user.nombre || ''}" required>
+                        <input type="text" id="profileNombre" value="${esc(user.nombre || '')}" required>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" value="${user.email || ''}" disabled style="opacity:0.5; cursor: not-allowed;">
+                        <input class="deshabilitado" type="email" value="${esc(user.email || '')}" disabled>
                     </div>
                     <div class="form-group">
                         <label>Rol actual</label>
-                        <input type="text" value="${(user.rol || 'EMPLEADO').toUpperCase()}" disabled style="opacity:0.5; cursor: not-allowed;">
+                        <input class="deshabilitado" type="text" value="${esc((user.rol || 'EMPLEADO').toUpperCase())}" disabled>
                     </div>
-                    <hr style="border-color: var(--border); margin: 1.5rem 0;">
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Cambiar contraseña (opcional)</p>
+                    <hr>
+                    <p class="texto-suave texto-chico mb-1">Cambiar contraseña (opcional)</p>
                     <div class="form-group">
                         <label>Nueva Contraseña</label>
                         <input type="password" id="profilePass" placeholder="Mínimo 8 caracteres, letras y números">
@@ -103,7 +100,7 @@
                         <label>Confirmar Contraseña</label>
                         <input type="password" id="profilePassConfirm" placeholder="Repite la nueva contraseña">
                     </div>
-                    <button type="submit" style="margin-top:1rem;">Guardar Cambios</button>
+                    <button class="mt-1" type="submit">Guardar Cambios</button>
                 </form>
             </div>
         `;
@@ -122,8 +119,8 @@
             if (pass && pass !== passConfirm) {
                 showMsg(msgEl, 'Las contraseñas no coinciden.', 'error'); return;
             }
-            if (pass && pass.length < 8) {
-                showMsg(msgEl, 'La contraseña debe tener al menos 8 caracteres.', 'error'); return;
+            if (pass && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(pass)) {
+                showMsg(msgEl, 'La contraseña debe tener al menos 8 caracteres, un dígito y una letra.', 'error'); return;
             }
 
             const body = { nombre };

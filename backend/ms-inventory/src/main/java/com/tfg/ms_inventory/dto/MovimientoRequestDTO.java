@@ -14,7 +14,7 @@ public class MovimientoRequestDTO {
     private Long productoId;
     private Long proveedorId;
     private Integer cantidad;
-    @NotBlank(message = "El tipo no puede estar vacÃ­o")
+    @NotBlank(message = "El tipo no puede estar vacío")
     @Pattern(regexp = "ENTRADA|SALIDA", message = "El tipo solo puede ser ENTRADA o SALIDA")
     private String tipo;
     private String usuarioEmail;

@@ -118,8 +118,8 @@ public class UserController {
 
         if (body.containsKey("password") && !body.get("password").isBlank()) {
             String pass = body.get("password");
-            if (pass.length() < 8) {
-                return ResponseEntity.badRequest().body(Map.of("message", "La contraseña debe tener al menos 8 caracteres."));
+            if (!pass.matches("^(?=.*[A-Za-z])(?=.*\\d).{8,}$")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "La contraseña debe tener al menos 8 caracteres, un dígito y una letra."));
             }
             usuario.setPassword(passwordEncoder.encode(pass));
         }

@@ -1,5 +1,6 @@
 package com.tfg.ms_mail.listener;
 
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -31,7 +32,8 @@ public class MailListener {
             System.out.println(" Email enviado a: " + email);
         } catch (Exception e) {
             System.err.println(" Error enviando email: " + e.getMessage());
-            throw e;
+            // Sin reencolar: si falla el SMTP el mensaje no vuelve a la cola en bucle
+            throw new AmqpRejectAndDontRequeueException("No se pudo enviar el email", e);
         }
     }
 }

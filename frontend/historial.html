@@ -5,40 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historial | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .detalle-cell {
-            color: var(--text-secondary); 
-            font-size: 0.85rem; 
-            transition: all 0.2s ease;
-        }
-        tr.clickable-row {
-            cursor: pointer;
-        }
-        tr.clickable-row:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-    </style>
 </head>
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <aside class="sidebar">
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link active"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="proveedores.html" class="nav-link">Proveedores</a>
+                <a href="inventario.html" class="nav-link">Inventario</a>
+                <a href="historial.html" class="nav-link active">Historial</a>
+                <a href="usuarios.html" class="nav-link oculto" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
+            <header class="mb-2">
                 <h2>Historial de Auditoría</h2>
-                <p style="color: var(--text-secondary);">Registro completo de todos los eventos y cambios del sistema.</p>
+                <p class="texto-suave">Registro completo de todos los eventos y cambios del sistema.</p>
             </header>
 
             <!-- Filtros principales -->
@@ -62,37 +48,37 @@
                     <option value="CATALOG">Catálogo</option>
                     <option value="USERS">Usuarios</option>
                 </select>
-                <div id="colToggleContainer" style="margin-left: auto;"></div>
+                <div class="ml-auto" id="colToggleContainer"></div>
             </div>
 
             <!-- Filtros secundarios: fechas y usuario -->
-            <div class="filters-bar" style="margin-top: -0.5rem;">
-                <div class="form-group" style="margin:0; display:flex; align-items:center; gap:0.5rem;">
-                    <label style="margin:0; white-space:nowrap; color:var(--text-secondary); font-size:0.85rem;">Desde</label>
+            <div class="filters-bar">
+                <div class="form-group fila sin-margen">
+                    <label class="sin-margen nowrap texto-suave texto-chico">Desde</label>
                     <input type="date" id="filterDesde" class="filter-input-date">
                 </div>
-                <div class="form-group" style="margin:0; display:flex; align-items:center; gap:0.5rem;">
-                    <label style="margin:0; white-space:nowrap; color:var(--text-secondary); font-size:0.85rem;">Hasta</label>
+                <div class="form-group fila sin-margen">
+                    <label class="sin-margen nowrap texto-suave texto-chico">Hasta</label>
                     <input type="date" id="filterHasta" class="filter-input-date">
                 </div>
-                <div class="search-box" style="max-width:240px;">
+                <div class="search-box max-240">
                     <input type="text" id="filterUsuario" placeholder="Filtrar por email de usuario...">
                 </div>
-                <button id="btnLimpiarFiltros" class="btn-secondary" style="white-space:nowrap;">
-                    <i data-lucide="x"></i> Limpiar filtros
+                <button id="btnLimpiarFiltros" class="btn-secondary nowrap">
+                    Limpiar filtros
                 </button>
-                <button id="btnRecargar" class="btn-secondary" style="white-space:nowrap;">
-                    <i data-lucide="refresh-cw"></i> Recargar
+                <button id="btnRecargar" class="btn-secondary nowrap">
+                    Recargar
                 </button>
             </div>
 
             <!-- Info de resultados + paginación -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
-                <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem;"></p>
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <button id="btnPrevPage" class="btn-page" disabled><i data-lucide="chevron-left"></i></button>
-                    <span id="pageInfo" style="color:var(--text-secondary); font-size:0.85rem; padding:0 0.5rem;"></span>
-                    <button id="btnNextPage" class="btn-page"><i data-lucide="chevron-right"></i></button>
+            <div class="fila fila-entre mb-1">
+                <p class="texto-suave texto-chico" id="resultCount"></p>
+                <div class="fila">
+                    <button id="btnPrevPage" class="btn-page" disabled>Anterior</button>
+                    <span class="texto-suave texto-chico" id="pageInfo"></span>
+                    <button id="btnNextPage" class="btn-page">Siguiente</button>
                 </div>
             </div>
 
@@ -121,7 +107,6 @@
     <script src="js/sidebar.js"></script>
     <script src="js/tableUtils.js"></script>
     <script>
-        lucide.createIcons();
 
         let allHistory = [];
         let currentPage = 0;
@@ -171,25 +156,25 @@
 
             historyBody.innerHTML = '';
             if (pageData.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay registros con los filtros aplicados.</td></tr>';
+                historyBody.innerHTML = '<tr><td class="mensaje" colspan="7">No hay registros con los filtros aplicados.</td></tr>';
                 return;
             }
 
             pageData.forEach(h => {
                 const accion     = (h.accion ?? h.tipo ?? '').toUpperCase();
                 const servicioOr = (h.servicioOrigen ?? '').toUpperCase();
-                const fecha      = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '—';
-                const usuario    = h.usuarioEmail ?? '—';
-                const entidad    = h.nombreProducto ?? (h.productoId ? `Producto #${h.productoId}` : (h.proveedorId ? `Proveedor #${h.proveedorId}` : `#${h.entidadId ?? '—'}`));
-                const detalle    = h.detalles ?? '—';
+                const fecha      = h.fecha ? new Date(h.fecha).toLocaleString('es-ES') : '-';
+                const usuario    = h.usuarioEmail ?? '-';
+                const entidad    = h.nombreProducto ?? (h.productoId ? `Producto #${h.productoId}` : (h.proveedorId ? `Proveedor #${h.proveedorId}` : `#${h.entidadId ?? '-'}`));
+                const detalle    = h.detalles ?? '-';
 
                 let qty = h.cantidad;
                 if (qty != null && (accion.includes('SALIDA') || accion.includes('OUT') || detalle.toUpperCase().includes('SALIDA'))) {
                     if (qty > 0) qty = -qty;
                 }
 
-                const cantidad   = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '—';
-                const colorCant  = qty > 0 ? 'var(--success)' : qty < 0 ? 'var(--error)' : 'var(--text-secondary)';
+                const cantidad   = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '-';
+                const claseCant  = qty > 0 ? 'texto-ok' : qty < 0 ? 'texto-error' : 'texto-suave';
 
                 let badgeClass = 'badge-warning';
                 if (accion.includes('ENTRADA') || accion.includes('IN'))  badgeClass = 'badge-stock';
@@ -203,20 +188,20 @@
 
                 historyBody.innerHTML += `
                     <tr class="clickable-row" onclick="this.classList.toggle('expanded-detalle')">
-                        <td style="color: var(--text-secondary); font-size: 0.85rem; white-space:nowrap;">${fecha}</td>
-                        <td style="font-size:0.85rem;">${usuario}</td>
-                        <td><span class="badge ${badgeClass}">${accion}</span></td>
-                        <td>${svcLabel ? `<span class="badge ${svcClass}">${svcLabel}</span>` : '—'}</td>
-                        <td style="font-weight:500;">${entidad}</td>
-                        <td style="font-weight: 700; color: ${colorCant};">${cantidad}</td>
-                        <td class="detalle-cell">${detalle}</td>
+                        <td class="texto-suave texto-chico nowrap">${esc(fecha)}</td>
+                        <td class="texto-chico">${esc(usuario)}</td>
+                        <td><span class="badge ${badgeClass}">${esc(accion)}</span></td>
+                        <td>${svcLabel ? `<span class="badge ${svcClass}">${esc(svcLabel)}</span>` : '-'}</td>
+                        <td class="negrita">${esc(entidad)}</td>
+                        <td class="negrita ${claseCant}">${cantidad}</td>
+                        <td class="detalle-cell">${esc(detalle)}</td>
                     </tr>
                 `;
             });
         }
 
         async function loadHistory() {
-            historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando registros...</td></tr>';
+            historyBody.innerHTML = '<tr><td class="mensaje" colspan="7">Cargando registros...</td></tr>';
             try {
                 let url = '/auditoria?size=500&page=0';
                 if (filterDesde.value) {
@@ -230,7 +215,7 @@
                 currentPage = 0;
                 renderPage();
             } catch {
-                historyBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
+                historyBody.innerHTML = '<tr><td class="mensaje mensaje-error" colspan="7">Error al cargar el historial. ¿Está el MS-Audit activo?</td></tr>';
             }
         }
 

@@ -6,34 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Productos | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <aside class="sidebar">
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link active"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i
-                        data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="productos.html" class="nav-link active">Productos</a>
+                <a href="proveedores.html" class="nav-link">Proveedores</a>
+                <a href="inventario.html" class="nav-link">Inventario</a>
+                <a href="historial.html" class="nav-link">Historial</a>
+                <a href="usuarios.html" class="nav-link oculto" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
+            <header class="mb-2">
                 <h2>Gestión de Productos</h2>
-                <p style="color: var(--text-secondary);">Administra el catálogo de productos de tu almacén.</p>
+                <p class="texto-suave">Administra el catálogo de productos de tu almacén.</p>
             </header>
 
             <!-- Filtros -->
-            <div class="filters-bar" style="align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <div class="search-box" style="flex: 1; min-width: 250px;">
+            <div class="filters-bar fila">
+                <div class="search-box flex-1">
                     <input type="text" id="searchInput" placeholder="Buscar por nombre o SKU...">
                 </div>
 
@@ -48,51 +46,42 @@
                 </select>
 
                 <!-- Filtro Precio en un rectángulo -->
-                <div
-                    style="display:flex; align-items:center; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.2); overflow: hidden;">
-                    <input type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01"
-                        style="width: 100px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none;">
-                    <div style="width: 1px; height: 20px; background: var(--border);"></div>
-                    <select id="filterPrecioOp"
-                        style="min-width: 110px; padding: 0.7rem 1rem; border: none; background: transparent; color: white; outline: none; cursor: pointer; appearance: auto;">
-                        <option value=">=" style="background: #1e222d; color: white;">Más de (≥)</option>
-                        <option value="<=" style="background: #1e222d; color: white;">Menos de (≤)</option>
-                        <option value="=" style="background: #1e222d; color: white;">Igual a (=)</option>
+                <div class="fila">
+                    <input class="ancho-100" type="number" id="filterPrecioVal" placeholder="Precio..." step="0.01">
+                    <div class="separador"></div>
+                    <select id="filterPrecioOp">
+                        <option value=">=">Más de</option>
+                        <option value="<=">Menos de</option>
+                        <option value="=">Igual a (=)</option>
                     </select>
                 </div>
 
                 <!-- Contenedor para el toggle de columnas -->
-                <div id="colToggleContainer" style="margin-left: 0.5rem;"></div>
+                <div class="ml-1" id="colToggleContainer"></div>
 
-                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo
+                <button class="btn-add nowrap ml-auto" id="openModalBtn">Nuevo
                     Producto</button>
             </div>
 
             <!-- Búsqueda en Servidor (API Backend) -->
-            <div class="filters-bar"
-                style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
-                <span
-                    style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i
-                        data-lucide="server" style="width:16px;"></i> Búsqueda en BD:</span>
+            <div class="filters-bar barra-info mb-1">
+                <span class="fila negrita">Búsqueda en BD:</span>
 
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <input type="text" id="apiSearchNombre" placeholder="Buscar por Nombre..."
-                        style="width: 220px; padding: 0.6rem; border-radius: 8px;">
-                    <button id="btnApiNombre" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar</button>
+                <div class="fila">
+                    <input class="ancho-220" type="text" id="apiSearchNombre" placeholder="Buscar por Nombre...">
+                    <button id="btnApiNombre" class="btn-secondary">Buscar</button>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <input type="text" id="apiSearchSku" placeholder="Buscar SKU exacto..."
-                        style="width: 180px; padding: 0.6rem; border-radius: 8px;">
-                    <button id="btnApiSku" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar SKU</button>
+                <div class="fila">
+                    <input class="ancho-180" type="text" id="apiSearchSku" placeholder="Buscar SKU exacto...">
+                    <button id="btnApiSku" class="btn-secondary">Buscar SKU</button>
                 </div>
 
-                <button id="btnResetApi" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;"
-                    title="Limpiar Búsqueda en BD y Recargar"><i data-lucide="refresh-cw"
-                        style="width:16px;"></i></button>
+                <button id="btnResetApi" class="btn-secondary ml-auto"
+                    title="Limpiar Búsqueda en BD y Recargar">Limpiar</button>
             </div>
 
-            <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+            <p class="texto-suave texto-chico mb-1" id="resultCount"></p>
 
             <!-- Tabla -->
             <div class="table-container">
@@ -120,16 +109,16 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="modalTitle">Añadir Producto</h3>
-                <button class="close-modal" id="closeModalBtn">&times;</button>
+                <button class="close-modal" id="closeModalBtn">Cerrar</button>
             </div>
-            <div id="modalMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <div id="modalMsg" class="alert mb-1"></div>
             <form id="productForm">
                 <input type="hidden" id="prodId">
                 <div class="form-group">
                     <label>Nombre del Producto *</label>
                     <input type="text" id="prodName" required placeholder="Ej. Laptop Pro">
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="grid-2">
                     <div class="form-group">
                         <label>Categoría *</label>
                         <input type="text" id="prodCat" required placeholder="Ej. Electrónica" list="catSuggestions">
@@ -154,7 +143,6 @@
     <script src="js/sidebar.js"></script>
     <script src="js/tableUtils.js"></script>
     <script>
-        lucide.createIcons();
 
         let allProducts = []; // productos activos
         let allInactivos = []; // productos inactivos
@@ -221,7 +209,7 @@
             document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${totalPool} productos`;
 
             if (data.length === 0) {
-                productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No se encontraron productos con los filtros aplicados.</td></tr>';
+                productsBody.innerHTML = '<tr><td class="mensaje" colspan="8">No se encontraron productos con los filtros aplicados.</td></tr>';
                 return;
             }
             data.forEach(p => {
@@ -230,25 +218,24 @@
                 const stockText = stock === 0 ? 'Sin Stock' : (stock < 10 ? 'Stock Bajo' : 'Disponible');
                 const precio = (p.precioNeto ?? p.precio ?? 0).toFixed(2);
                 const activo = p.activo !== false;
-                const rowStyle = !activo ? 'opacity:0.5; filter:grayscale(0.5);' : '';
+                const rowClass = !activo ? 'inactivo' : '';
 
                 const accionesHtml = isAdmin ? `
-                    <td style="display:flex; gap:0.5rem;">
-                        <button onclick="editProduct(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
+                    <td><div class="fila">
+                        <button onclick="editProduct(${p.id})" class="btn-icon btn-edit" title="Editar">Editar</button>
                         <button onclick="toggleActivoProduct(${p.id}, ${activo})" class="btn-icon ${activo ? 'btn-danger' : 'btn-edit'}" title="${activo ? 'Desactivar (Borrado Lógico)' : 'Reactivar'}">
-                            <i data-lucide="${activo ? 'archive' : 'rotate-ccw'}"></i>
+                            ${activo ? 'Archivar' : 'Reactivar'}
                         </button>
-                        ${!activo ? `<button onclick="deleteFisico(${p.id})" class="btn-icon" style="background:var(--error); color:white; border:none;" title="Borrar Físicamente de la BD"><i data-lucide="trash-2"></i></button>` : ''}
-                    </td>` : '';
+                        ${!activo ? `<button onclick="deleteFisico(${p.id})" class="btn-icon btn-borrar" title="Borrar Físicamente de la BD">Eliminar</button>` : ''}</div></td>` : '';
 
                 productsBody.innerHTML += `
-                    <tr style="${rowStyle}">
+                    <tr class="${rowClass}">
                         <td>#${p.id}</td>
-                        <td style="font-weight: 600;">${p.nombre}</td>
-                        <td>${p.categoria ?? '—'}</td>
-                        <td style="font-family: monospace; font-size:0.85rem; color: var(--text-secondary);">${p.sku ?? '—'}</td>
+                        <td class="negrita">${esc(p.nombre)}</td>
+                        <td>${esc(p.categoria ?? '-')}</td>
+                        <td class="mono texto-suave texto-chico">${esc(p.sku ?? '-')}</td>
                         <td>${precio} €</td>
-                        <td style="font-weight:700;">${stock}</td>
+                        <td class="negrita">${stock}</td>
                         <td><span class="badge ${stockStatus}">${stockText}</span></td>
                         ${accionesHtml}
                     </tr>
@@ -258,13 +245,12 @@
             console.log('Data length:', data.length);
             console.log('Admin Status:', isAdmin);
             console.log('HTML length inside productsBody:', productsBody.innerHTML.length);
-            lucide.createIcons();
         }
 
         function applyFilters() { renderProducts(getFilteredProducts()); }
 
         async function loadProducts() {
-            productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando productos...</td></tr>';
+            productsBody.innerHTML = '<tr><td class="mensaje" colspan="8">Cargando productos...</td></tr>';
             try {
                 const [prodActivos, prodInactivos, stockData] = await Promise.allSettled([
                     api.get('/productos'),
@@ -290,15 +276,15 @@
                 const todosProductos = [...allProducts, ...allInactivos];
                 const cats = [...new Set(todosProductos.map(p => p.categoria).filter(Boolean))].sort();
                 filterCategoria.innerHTML = '<option value="">Todas las categorías</option>';
-                cats.forEach(c => { filterCategoria.innerHTML += `<option value="${c}">${c}</option>`; });
+                cats.forEach(c => { filterCategoria.innerHTML += `<option value="${esc(c)}">${esc(c)}</option>`; });
 
                 const datalist = document.getElementById('catSuggestions');
                 datalist.innerHTML = '';
-                cats.forEach(c => { datalist.innerHTML += `<option value="${c}">`; });
+                cats.forEach(c => { datalist.innerHTML += `<option value="${esc(c)}">`; });
 
                 renderProducts(getFilteredProducts());
             } catch (err) {
-                productsBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar productos.</td></tr>';
+                productsBody.innerHTML = '<tr><td class="mensaje mensaje-error" colspan="8">Error al cargar productos.</td></tr>';
             }
         }
 
@@ -313,7 +299,7 @@
 
         // Borrado FÍSICO (Solo para productos inactivos)
         async function deleteFisico(id) {
-            if (!confirm(`⚠ PELIGRO: ¿Estás totalmente seguro de borrar FÍSICAMENTE este producto de la base de datos? Se perderá todo su historial asociado.`)) return;
+            if (!confirm(`ATENCIÓN: ¿Estás totalmente seguro de borrar FÍSICAMENTE este producto de la base de datos? Se perderá todo su historial asociado.`)) return;
             const res = await api.delete(`/productos/${id}/fisico`);
             if (res && res.error) { alert(res.message); return; }
             await loadProducts();
@@ -379,7 +365,7 @@
         document.getElementById('btnApiNombre').addEventListener('click', async () => {
             const term = document.getElementById('apiSearchNombre').value.trim();
             if (!term) return;
-            document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;">Buscando en servidor...</td></tr>';
+            document.getElementById('productsBody').innerHTML = '<tr><td class="centro" colspan="8">Buscando en servidor...</td></tr>';
             try {
                 const resActivos = await api.get(`/productos/buscar?nombre=${term}`);
                 const resInactivos = await api.get(`/productos/inactivos/buscar?nombre=${term}`);
@@ -399,7 +385,7 @@
         document.getElementById('btnApiSku').addEventListener('click', async () => {
             const sku = document.getElementById('apiSearchSku').value.trim();
             if (!sku) return;
-            document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center;">Buscando en servidor...</td></tr>';
+            document.getElementById('productsBody').innerHTML = '<tr><td class="centro" colspan="8">Buscando en servidor...</td></tr>';
             try {
                 const res = await api.get(`/productos/sku/${sku}`);
                 allProducts = [];
@@ -408,7 +394,7 @@
                     if (res.activo) allProducts.push(res);
                     else allInactivos.push(res);
                 } else {
-                    document.getElementById('productsBody').innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--error);">SKU no encontrado en BD.</td></tr>';
+                    document.getElementById('productsBody').innerHTML = '<tr><td class="centro texto-error" colspan="8">SKU no encontrado en BD.</td></tr>';
                     document.getElementById('resultCount').textContent = 'Resultados: 0';
                     return;
                 }

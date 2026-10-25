@@ -77,7 +77,7 @@ function createColumnToggle(table, container) {
     
     const btn = document.createElement('button');
     btn.classList.add('btn-secondary');
-    btn.innerHTML = '<i data-lucide="columns"></i> Columnas';
+    btn.textContent = 'Columnas';
     btn.title = 'Mostrar/Ocultar Columnas';
     
     const menu = document.createElement('div');

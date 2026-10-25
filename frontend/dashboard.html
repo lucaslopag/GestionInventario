@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Sistema de Inventario</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Lucide se carga primero para que los iconos estén disponibles de inmediato -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <!-- Sidebar -->
@@ -16,25 +14,25 @@
             <!-- Perfil de usuario (arriba a la izquierda) -->
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
 
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="proveedores.html" class="nav-link">Proveedores</a>
+                <a href="inventario.html" class="nav-link">Inventario</a>
+                <a href="historial.html" class="nav-link">Historial</a>
+                <a href="usuarios.html" class="nav-link oculto" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+            <header class="fila fila-entre mb-2">
                 <div>
                     <h2>Panel de Control</h2>
-                    <p style="color: var(--text-secondary);">Bienvenido de nuevo, <span id="userName" style="color: white;">Usuario</span></p>
+                    <p class="texto-suave">Bienvenido de nuevo, <span id="userName">Usuario</span></p>
                 </div>
-                <div style="background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 12px; border: 1px solid var(--border);">
-                    <span id="userRole" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">USUARIO</span>
+                <div class="etiqueta">
+                    <span class="texto-chico negrita" id="userRole">USUARIO</span>
                 </div>
             </header>
 
@@ -42,34 +40,34 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">Total Productos</p>
-                    <p class="stat-value" id="statProductos">—</p>
+                    <p class="stat-value" id="statProductos">-</p>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Stock Bajo</p>
-                    <p class="stat-value" id="statStockBajo" style="color: var(--error);">—</p>
+                    <p class="stat-value texto-error" id="statStockBajo">-</p>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Proveedores</p>
-                    <p class="stat-value" id="statProveedores">—</p>
+                    <p class="stat-value" id="statProveedores">-</p>
                 </div>
             </div>
 
             <!-- Charts Section -->
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 3rem;">
-                <div style="background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid var(--border);">
-                    <h3 style="margin-bottom: 1.5rem;">Actividad Semanal</h3>
+            <div class="grid-2-1 mt-2">
+                <div class="caja">
+                    <h3 class="mb-1">Actividad Semanal</h3>
                     <canvas id="activityChart" height="120"></canvas>
                 </div>
-                <div style="background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid var(--border);">
-                    <h3 style="margin-bottom: 1.5rem;">Stock por Categoría</h3>
+                <div class="caja">
+                    <h3 class="mb-1">Stock por Categoría</h3>
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
 
             <!-- Actividad Reciente -->
-            <div id="recentActivity" style="margin-top: 3rem; background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid var(--border);">
+            <div class="caja mt-2" id="recentActivity">
                 <h3>Actividad Reciente</h3>
-                <p style="color: var(--text-secondary); margin-top: 1rem;">Cargando actividad reciente...</p>
+                <p class="texto-suave mt-1">Cargando actividad reciente...</p>
             </div>
         </main>
     </div>
@@ -79,9 +77,8 @@
     <script src="js/auth.js"></script>
     <script src="js/sidebar.js"></script>
     <script>
-        // Inicializar iconos INMEDIATAMENTE — antes de cualquier llamada async
+        // Inicializar iconos INMEDIATAMENTE - antes de cualquier llamada async
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -106,14 +103,14 @@
                 type: 'line',
                 data: {
                     labels: labels7,
-                    datasets: [{ label: 'Movimientos', data: [0,0,0,0,0,0,0], borderColor: '#00d2ff', backgroundColor: 'rgba(0,210,255,0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: '#00d2ff', pointRadius: 5 }]
+                    datasets: [{ label: 'Movimientos', data: [0,0,0,0,0,0,0], borderColor: '#1f4e8c', backgroundColor: 'rgba(31,78,140,0.1)', fill: true, tension: 0, borderWidth: 2, pointBackgroundColor: '#1f4e8c', pointRadius: 3 }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', stepSize: 1 } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        y: { beginAtZero: true, grid: { color: '#dddddd' }, ticks: { color: '#555555', stepSize: 1 } },
+                        x: { grid: { display: false }, ticks: { color: '#555555' } }
                     }
                 }
             });
@@ -122,14 +119,14 @@
                 type: 'bar',
                 data: {
                     labels: ['Sin datos'],
-                    datasets: [{ label: 'Productos', data: [0], backgroundColor: '#3a7bd5', borderRadius: 8, hoverBackgroundColor: '#00d2ff' }]
+                    datasets: [{ label: 'Productos', data: [0], backgroundColor: '#1f4e8c' }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        y: { beginAtZero: true, grid: { color: '#dddddd' }, ticks: { color: '#555555' } },
+                        x: { grid: { display: false }, ticks: { color: '#555555' } }
                     }
                 }
             });
@@ -156,7 +153,7 @@
                     categoryChart.update();
                 }
             } else {
-                document.getElementById('statProductos').textContent = '—';
+                document.getElementById('statProductos').textContent = '-';
             }
 
             // Stats: Stock Bajo
@@ -165,7 +162,7 @@
                 const bajo = stock.filter(s => (s.cantidadDisponible ?? s.cantidad ?? 0) < 10).length;
                 document.getElementById('statStockBajo').textContent = bajo;
             } else {
-                document.getElementById('statStockBajo').textContent = '—';
+                document.getElementById('statStockBajo').textContent = '-';
             }
 
             // Stats: Proveedores
@@ -173,7 +170,7 @@
                 const prov = Array.isArray(proveedoresRes.value) ? proveedoresRes.value : (proveedoresRes.value.content ?? []);
                 document.getElementById('statProveedores').textContent = prov.length;
             } else {
-                document.getElementById('statProveedores').textContent = '—';
+                document.getElementById('statProveedores').textContent = '-';
             }
 
             // Actividad y gráfico de líneas
@@ -191,30 +188,28 @@
                 // Actividad reciente
                 const recentEl = document.getElementById('recentActivity');
                 if (logs.length > 0) {
-                    let html = '<h3>Actividad Reciente</h3><div style="margin-top: 1rem;">';
+                    let html = '<h3>Actividad Reciente</h3><div class="mt-1">';
                     logs.slice(0, 5).forEach(log => {
                         const date = new Date(log.fecha).toLocaleString('es-ES');
-                        const accion = log.accion || log.tipo || '—';
+                        const accion = log.accion || log.tipo || '-';
                         const badgeClass = accion.includes('ENTRADA') ? 'badge-stock' : accion.includes('SALIDA') ? 'badge-danger' : 'badge-warning';
                         html += `
-                            <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                                <div style="display:flex; align-items:center; gap:1rem;">
-                                    <span class="badge ${badgeClass}">${accion}</span>
-                                    <p style="font-size: 0.85rem; color: var(--text-secondary);">${log.detalles || log.usuarioEmail || 'Sin detalles'}</p>
+                            <div class="pie-tabla fila fila-entre">
+                                <div class="fila">
+                                    <span class="badge ${badgeClass}">${esc(accion)}</span>
+                                    <p class="texto-suave texto-chico">${esc(log.detalles || log.usuarioEmail || 'Sin detalles')}</p>
                                 </div>
-                                <p style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">${date}</p>
+                                <p class="texto-suave texto-chico nowrap">${date}</p>
                             </div>
                         `;
                     });
                     html += '</div>';
                     recentEl.innerHTML = html;
                 } else {
-                    document.getElementById('recentActivity').innerHTML = '<h3>Actividad Reciente</h3><p style="color: var(--text-secondary); margin-top: 1rem;">No hay actividad registrada aún.</p>';
+                    document.getElementById('recentActivity').innerHTML = '<h3>Actividad Reciente</h3><p class="texto-suave mt-1">No hay actividad registrada aún.</p>';
                 }
             }
 
-            // Re-renderizar iconos tras sidebar.js
-            lucide.createIcons();
         });
     </script>
 </body>

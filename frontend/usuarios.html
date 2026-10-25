@@ -5,37 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuarios | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <aside class="sidebar">
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link active" id="navUsuarios"><i data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="proveedores.html" class="nav-link">Proveedores</a>
+                <a href="inventario.html" class="nav-link">Inventario</a>
+                <a href="historial.html" class="nav-link">Historial</a>
+                <a href="usuarios.html" class="nav-link active" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
+            <header class="mb-2">
                 <h2>Gestión de Usuarios</h2>
-                <p style="color: var(--text-secondary);">Administra cuentas de usuario y roles del sistema.</p>
+                <p class="texto-suave">Administra cuentas de usuario y roles del sistema.</p>
             </header>
 
             <!-- Acceso solo ADMIN -->
-            <div id="adminGate" style="display:none; background: rgba(255,75,92,0.08); border: 1px solid rgba(255,75,92,0.25); border-radius: 20px; padding: 2rem; text-align:center; margin-bottom:2rem;">
-                <i data-lucide="lock" style="width:40px; height:40px; color:var(--error); margin-bottom:1rem;"></i>
-                <h3 style="color:var(--error);">Acceso Restringido</h3>
-                <p style="color:var(--text-secondary); margin-top:0.5rem;">Esta sección requiere el rol <strong>ADMIN</strong>.</p>
+            <div class="oculto caja-error centro mb-2" id="adminGate">
+                
+                <h3 class="texto-error">Acceso Restringido</h3>
+                <p class="texto-suave">Esta sección requiere el rol <strong>ADMIN</strong>.</p>
             </div>
 
-            <div id="adminContent" style="display:none;">
+            <div class="oculto" id="adminContent">
                 <!-- Filtros + Nuevo usuario -->
                 <div class="filters-bar">
                     <div class="search-box">
@@ -51,11 +50,11 @@
                         <option value="confirmado">Confirmados</option>
                         <option value="pendiente">Pendientes</option>
                     </select>
-                    <div id="colToggleContainer" style="margin-left: auto;"></div>
-                    <button class="btn-add" id="openCreateModalBtn" style="white-space:nowrap;">+ Nuevo Usuario</button>
+                    <div class="ml-auto" id="colToggleContainer"></div>
+                    <button class="btn-add nowrap" id="openCreateModalBtn">Nuevo Usuario</button>
                 </div>
 
-                <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+                <p class="texto-suave texto-chico mb-1" id="resultCount"></p>
 
                 <!-- Tabla de usuarios -->
                 <div class="table-container">
@@ -83,9 +82,9 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Crear Nuevo Usuario</h3>
-                <button class="close-modal" id="closeCreateModal">&times;</button>
+                <button class="close-modal" id="closeCreateModal">Cerrar</button>
             </div>
-            <div id="createMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <div id="createMsg" class="alert mb-1"></div>
             <form id="createUserForm">
                 <div class="form-group">
                     <label>Nombre Completo</label>
@@ -101,7 +100,7 @@
                 </div>
                 <div class="form-group">
                     <label>Rol</label>
-                    <select id="newRol" style="width:100%; padding:1rem 1.2rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:14px; color:white; font-size:1rem;">
+                    <select id="newRol">
                         <option value="EMPLEADO">EMPLEADO</option>
                         <option value="ADMIN">ADMIN</option>
                     </select>
@@ -113,22 +112,22 @@
 
     <!-- Modal: Cambiar Rol -->
     <div class="modal-overlay" id="rolModal">
-        <div class="modal" style="max-width:400px;">
+        <div class="modal max-400">
             <div class="modal-header">
                 <h3>Cambiar Rol</h3>
-                <button class="close-modal" id="closeRolModal">&times;</button>
+                <button class="close-modal" id="closeRolModal">Cerrar</button>
             </div>
-            <div id="rolMsg" class="alert" style="margin-bottom:1rem;"></div>
-            <p id="rolModalDesc" style="color:var(--text-secondary); margin-bottom:1.5rem;"></p>
+            <div id="rolMsg" class="alert mb-1"></div>
+            <p class="texto-suave mb-1" id="rolModalDesc"></p>
             <div class="form-group">
                 <label>Nuevo Rol</label>
-                <select id="nuevoRolSelect" style="width:100%; padding:1rem 1.2rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:14px; color:white; font-size:1rem;">
+                <select id="nuevoRolSelect">
                     <option value="EMPLEADO">EMPLEADO</option>
                     <option value="ADMIN">ADMIN</option>
                 </select>
             </div>
             <input type="hidden" id="rolTargetId">
-            <button id="confirmarRolBtn" style="margin-top:1rem;">Confirmar Cambio</button>
+            <button class="mt-1" id="confirmarRolBtn">Confirmar Cambio</button>
         </div>
     </div>
 
@@ -137,7 +136,6 @@
     <script src="js/sidebar.js"></script>
     <script src="js/tableUtils.js"></script>
     <script>
-        lucide.createIcons();
 
         let allUsers = [];
         const currentUser = JSON.parse(localStorage.getItem('user')) || {};
@@ -161,31 +159,29 @@
             usersBody.innerHTML = '';
             document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${allUsers.length} usuarios`;
             if (data.length === 0) {
-                usersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-secondary); padding:2rem;">No se encontraron usuarios.</td></tr>';
+                usersBody.innerHTML = '<tr><td class="mensaje" colspan="7">No se encontraron usuarios.</td></tr>';
                 return;
             }
             data.forEach(u => {
                 const rolClass    = u.rol === 'ADMIN' ? 'badge-danger' : 'badge-stock';
                 const estadoClass = u.confirmado ? 'badge-stock' : 'badge-warning';
                 const estadoText  = u.confirmado ? 'Activo' : 'Pendiente';
-                const fecha  = u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleDateString('es-ES') : '—';
+                const fecha  = u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleDateString('es-ES') : '-';
                 const isSelf = u.email === currentUser.email;
                 usersBody.innerHTML += `
                     <tr>
                         <td>#${u.id}</td>
-                        <td style="font-weight:600;">${u.nombre} ${isSelf ? '<span class="badge badge-info" style="font-size:0.65rem;">Tú</span>' : ''}</td>
-                        <td style="color:var(--accent); font-size:0.9rem;">${u.email}</td>
-                        <td><span class="badge ${rolClass}">${u.rol || 'EMPLEADO'}</span></td>
+                        <td class="negrita">${esc(u.nombre)} ${isSelf ? '<span class="badge badge-info texto-chico">Tú</span>' : ''}</td>
+                        <td class="texto-acento">${esc(u.email)}</td>
+                        <td><span class="badge ${rolClass}">${esc(u.rol || 'EMPLEADO')}</span></td>
                         <td><span class="badge ${estadoClass}">${estadoText}</span></td>
-                        <td style="color:var(--text-secondary); font-size:0.85rem;">${fecha}</td>
-                        <td style="display:flex; gap:0.5rem;">
-                            <button onclick="openRolModal(${u.id}, '${u.nombre}', '${u.rol}')" class="btn-icon btn-edit" title="Cambiar Rol"><i data-lucide="shield"></i></button>
-                            ${!isSelf ? `<button onclick="deleteUser(${u.id}, '${u.nombre}')" class="btn-icon btn-danger" title="Eliminar"><i data-lucide="trash-2"></i></button>` : ''}
-                        </td>
+                        <td class="texto-suave texto-chico">${fecha}</td>
+                        <td><div class="fila">
+                            <button data-nombre="${esc(u.nombre)}" data-rol="${esc(u.rol)}" onclick="openRolModal(${Number(u.id)}, this.dataset.nombre, this.dataset.rol)" class="btn-icon btn-edit" title="Cambiar Rol">Cambiar rol</button>
+                            ${!isSelf ? `<button data-nombre="${esc(u.nombre)}" onclick="deleteUser(${Number(u.id)}, this.dataset.nombre)" class="btn-icon btn-danger" title="Eliminar">Eliminar</button>` : ''}</div></td>
                     </tr>
                 `;
             });
-            lucide.createIcons();
         }
 
         function applyFilters() { renderUsers(getFiltered()); }
@@ -193,7 +189,6 @@
         // Mostrar u ocultar contenido según rol
         if (!isAdmin) {
             document.getElementById('adminGate').style.display = 'block';
-            lucide.createIcons();
         } else {
             document.getElementById('adminContent').style.display = 'block';
             initAdminPanel();
@@ -204,10 +199,10 @@
             const rolModal    = document.getElementById('rolModal');
 
             async function loadUsers() {
-                usersBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-secondary);">Cargando usuarios...</td></tr>';
+                usersBody.innerHTML = '<tr><td class="mensaje" colspan="7">Cargando usuarios...</td></tr>';
                 const res = await api.get('/usuarios');
                 if (res.error) {
-                    usersBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--error); padding:2rem;">${res.message}</td></tr>`;
+                    usersBody.innerHTML = `<tr><td class="mensaje mensaje-error" colspan="7">${esc(res.message)}</td></tr>`;
                     return;
                 }
                 allUsers = Array.isArray(res) ? res : (res.content ?? []);

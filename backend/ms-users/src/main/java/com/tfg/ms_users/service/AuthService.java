@@ -1,6 +1,7 @@
 package com.tfg.ms_users.service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -55,7 +56,7 @@ public class AuthService {
     private String appBaseUrl;
 
     @Transactional
-    public String registrar(RegisterRequest request) {
+    public String registrar(RegisterRequest request, String rolesLlamante) {
         // 1. Validar política de contraseña (mínimo 8 caracteres, letras y números)
         String password = request.getPassword();
         String passwordRegex = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$";
@@ -73,7 +74,7 @@ public class AuthService {
                 .nombre(request.getNombre())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .rol(request.getRol() != null ? request.getRol().toUpperCase() : "EMPLEADO")
+                .rol(rolPermitido(request.getRol(), rolesLlamante))
                 .confirmado(false)
                 .tokenConfirmacion(token)
                 .tokenExpira(LocalDateTime.now().plusHours(24))
@@ -96,6 +97,16 @@ public class AuthService {
         }
 
         return "Usuario registrado con exito. Revisa tu email para confirmar la cuenta.";
+    }
+
+    // Solo un ADMIN autenticado puede crear usuarios con rol ADMIN; el resto se crean como EMPLEADO
+    private String rolPermitido(String rolPedido, String rolesLlamante) {
+        boolean llamanteEsAdmin = rolesLlamante != null
+                && Arrays.asList(rolesLlamante.toUpperCase().split("\\s*,\\s*")).contains("ADMIN");
+        if (llamanteEsAdmin && "ADMIN".equalsIgnoreCase(rolPedido)) {
+            return "ADMIN";
+        }
+        return "EMPLEADO";
     }
 
     private void enviarEmailConfirmacion(Usuario usuario) {

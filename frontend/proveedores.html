@@ -5,32 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proveedores | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <aside class="sidebar">
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link active"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="proveedores.html" class="nav-link active">Proveedores</a>
+                <a href="inventario.html" class="nav-link">Inventario</a>
+                <a href="historial.html" class="nav-link">Historial</a>
+                <a href="usuarios.html" class="nav-link oculto" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
+            <header class="mb-2">
                 <h2>Gestión de Proveedores</h2>
-                <p style="color: var(--text-secondary);">Administra tus contactos y socios comerciales.</p>
+                <p class="texto-suave">Administra tus contactos y socios comerciales.</p>
             </header>
 
             <!-- Filtros -->
-            <div class="filters-bar" style="display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
-                <div class="search-box" style="flex:1; min-width:250px;">
+            <div class="filters-bar fila">
+                <div class="search-box flex-1">
                     <input type="text" id="searchInput" placeholder="Buscar por nombre, email o dirección...">
                 </div>
                 <select id="filterOrden" class="filter-select">
@@ -39,10 +38,10 @@
                     <option value="email">Email A–Z</option>
                 </select>
                 <div id="colToggleContainer"></div>
-                <button class="btn-add" id="openModalBtn" style="white-space:nowrap; margin-left:auto;">+ Nuevo Proveedor</button>
+                <button class="btn-add nowrap ml-auto" id="openModalBtn">Nuevo Proveedor</button>
             </div>
 
-            <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+            <p class="texto-suave texto-chico mb-1" id="resultCount"></p>
 
             <!-- Tabla -->
             <div class="table-container">
@@ -67,9 +66,9 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="modalTitle">Añadir Proveedor</h3>
-                <button class="close-modal" id="closeModalBtn">&times;</button>
+                <button class="close-modal" id="closeModalBtn">Cerrar</button>
             </div>
-            <div id="modalMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <div id="modalMsg" class="alert mb-1"></div>
             <form id="providerForm">
                 <input type="hidden" id="provId">
 
@@ -98,7 +97,6 @@
     <script src="js/sidebar.js"></script>
     <script src="js/tableUtils.js"></script>
     <script>
-        lucide.createIcons();
 
         let isAdmin = false;
         const userRaw = localStorage.getItem('user');
@@ -144,37 +142,35 @@
             document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${allProviders.length} proveedores`;
 
             if (data.length === 0) {
-                providersBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No se encontraron proveedores.</td></tr>';
+                providersBody.innerHTML = '<tr><td class="mensaje" colspan="5">No se encontraron proveedores.</td></tr>';
                 return;
             }
             data.forEach(p => {
                 providersBody.innerHTML += `
                     <tr>
                         <td>#${p.id}</td>
-                        <td style="font-weight: 600;">${p.nombre}</td>
-                        <td style="color: var(--accent);">${p.email}</td>
-                        <td>${p.direccion ?? '—'}</td>
+                        <td class="negrita">${esc(p.nombre)}</td>
+                        <td class="texto-acento">${esc(p.email)}</td>
+                        <td>${esc(p.direccion ?? '-')}</td>
                         ${isAdmin ? `
-                        <td style="display:flex; gap:0.5rem;">
-                            <button onclick="editProvider(${p.id})" class="btn-icon btn-edit" title="Editar"><i data-lucide="pencil"></i></button>
-                            <button onclick="deleteProvider(${p.id})" class="btn-icon btn-danger" title="Eliminar"><i data-lucide="trash-2"></i></button>
-                        </td>` : ''}
+                        <td><div class="fila">
+                            <button onclick="editProvider(${p.id})" class="btn-icon btn-edit" title="Editar">Editar</button>
+                            <button onclick="deleteProvider(${p.id})" class="btn-icon btn-danger" title="Eliminar">Eliminar</button></div></td>` : ''}
                     </tr>
                 `;
             });
-            lucide.createIcons();
         }
 
         function applyFilters() { renderProviders(getFiltered()); }
 
         async function loadProviders() {
-            providersBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando...</td></tr>';
+            providersBody.innerHTML = '<tr><td class="mensaje" colspan="5">Cargando...</td></tr>';
             try {
                 const data = await api.get('/proveedores');
                 allProviders = Array.isArray(data) ? data : (data.content ?? []);
                 renderProviders(allProviders);
             } catch {
-                providersBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar proveedores.</td></tr>';
+                providersBody.innerHTML = '<tr><td class="mensaje mensaje-error" colspan="5">Error al cargar proveedores.</td></tr>';
             }
         }
 

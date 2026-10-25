@@ -40,7 +40,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         HttpMethod method = request.getMethod();
 
         if (isPublicRoute(path)) {
-            return chain.filter(exchange);
+            // En rutas publicas se descartan las cabeceras de identidad que mande el cliente
+            ServerHttpRequest peticionPublica = conIdentidadOpcional(request);
+            return chain.filter(exchange.mutate().request(peticionPublica).build());
         }
 
         String authHeader = request.getHeaders().getFirst("Authorization");
@@ -104,6 +106,36 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
         // Por defecto permitir si el token es válido
         return true;
+    }
+
+    // Rutas publicas: nunca se fia de X-User-*; solo las pone el gateway si el JWT enviado es valido
+    private ServerHttpRequest conIdentidadOpcional(ServerHttpRequest request) {
+        ServerHttpRequest limpia = request.mutate().headers(h -> {
+            h.remove("X-User-Email");
+            h.remove("X-User-Roles");
+        }).build();
+
+        String authHeader = limpia.getHeaders().getFirst("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return limpia;
+        }
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                    .build()
+                    .parseClaimsJws(authHeader.substring(7))
+                    .getBody();
+            String rol = claims.get("roles", String.class);
+            if (rol == null || rol.trim().isEmpty()) {
+                return limpia;
+            }
+            return limpia.mutate()
+                    .header("X-User-Email", claims.getSubject())
+                    .header("X-User-Roles", rol.trim().toUpperCase())
+                    .build();
+        } catch (Exception e) {
+            return limpia;
+        }
     }
 
     private boolean isWriteMethod(HttpMethod method) {

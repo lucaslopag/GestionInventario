@@ -1,4 +1,4 @@
-# 📦 Plan de Trabajo — Sistema de Gestión de Inventario (TFG DAM)
+# Plan de Trabajo — Sistema de Gestión de Inventario (TFG DAM)
 
 > **Equipo:** Lucas · Ángel · Alejandro  
 > **Duración:** 7 días  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🧠 Visión general de la arquitectura
+## Visión general de la arquitectura
 
 ```
 Frontend (nginx) → API Gateway → [Eureka] → Microservicios
@@ -29,20 +29,20 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 
 ---
 
-## 📋 División de responsabilidades fijas
+## División de responsabilidades fijas
 
-### 🔵 Lucas — Backend: Microservicios de dominio
+### Lucas — Backend: Microservicios de dominio
 - `ms-catalog` (CRUD productos, SKU único, borrado lógico)
 - `ms-suppliers` (CRUD proveedores, email único)
 - `ms-inventory` (stock, entradas/salidas, publica en `cola.auditoria`)
 
-### 🟢 Ángel — Backend: Infraestructura y servicios de soporte
+### Ángel — Backend: Infraestructura y servicios de soporte
 - `eureka-server` (service registry)
 - `api-gateway` (Spring Cloud Gateway, filtro JWT, CORS, enrutamiento)
 - `ms-audit` (consume `cola.auditoria`, consultas de historial)
 - `ms-mail` (consume `cola.mails`, envía por SMTP)
 
-### 🟡 Alejandro — Frontend + Infraestructura + MS-Users
+### Alejandro — Frontend + Infraestructura + MS-Users
 - `ms-users` (registro, login, JWT, confirmación por email → publica en `cola.mails`)
 - Todas las páginas HTML/CSS/JS (login, registro, confirmación, productos, proveedores, inventario, auditoría)
 - Esquemas SQL de todas las BBDDs
@@ -51,16 +51,16 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 
 ---
 
-## 📅 Plan de 7 días — ¿Qué hace cada uno y en qué orden?
+## Plan de 7 días — ¿Qué hace cada uno y en qué orden?
 
 > **Filosofía:** Los primeros 3 días todos trabajan de forma **completamente independiente**.  
 > Los días 4-5 se unen las piezas. Los días 6-7 se pule y prueba.
 
 ---
 
-### ⚡ Días 1-2 — Base independiente (todos en paralelo)
+### Días 1-2 — Base independiente (todos en paralelo)
 
-#### 🔵 Lucas — Días 1-2
+#### Lucas — Días 1-2
 > Objetivo: los 3 microservicios de dominio funcionan en **local standalone** (sin Gateway, sin Eureka, sin JWT), listos para ser integrados.
 
 **Día 1:**
@@ -83,11 +83,11 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - Leer `usuario_email` de la cabecera `X-User-Email` (simularlo con un valor fijo mientras no hay Gateway)
   - **Dejar preparado** el método `publicarEventoAuditoria()` → por ahora solo log en consola, se conectará a RabbitMQ el día 3
 
-> 💡 **Truco:** Alejandro sube los scripts SQL el día 1. Lucas los usa para crear su MySQL local sin perder tiempo.
+> **Truco:** Alejandro sube los scripts SQL el día 1. Lucas los usa para crear su MySQL local sin perder tiempo.
 
 ---
 
-#### 🟢 Ángel — Días 1-2
+#### Ángel — Días 1-2
 > Objetivo: Eureka + Gateway funcionando (Alejandro se encarga de `ms-users` con JWT).
 
 **Día 1:**
@@ -108,11 +108,11 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - Configurar CORS
 - [x] Registrar `eureka-server` y esperar que `ms-users` (Alejandro) se registre para probar el Gateway
 
-> 💡 Ángel necesita el `JWT_SECRET` que Alejandro define el día 1 para poder configurar el `JwtAuthFilter` del Gateway.
+> Ángel necesita el `JWT_SECRET` que Alejandro define el día 1 para poder configurar el `JwtAuthFilter` del Gateway.
 
 ---
 
-#### 🟡 Alejandro — Días 1-2
+#### Alejandro — Días 1-2
 > Objetivo: infraestructura local lista, `ms-users` con autenticación JWT completa, y frontend con estructura básica.
 
 **Día 1:**
@@ -143,9 +143,9 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 
 ---
 
-### ⚡ Día 3 — Conectar RabbitMQ y afinar integración
+### Día 3 — Conectar RabbitMQ y afinar integración
 
-#### 🔵 Lucas — Día 3
+#### Lucas — Día 3
 - [ ] Añadir dependencia RabbitMQ a `ms-inventory`
 - [ ] Implementar `publicarEventoAuditoria()` real: serializar evento JSON y enviarlo a `cola.auditoria`
 - [ ] Añadir `RabbitMQConfig` (cola durable, DLQ `cola.auditoria.dlq`)
@@ -153,8 +153,8 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 - [ ] Verificar que los tres MS arrancan y se registran en Eureka
 - [ ] Test con Postman: entrada → ver stock → ver evento en RabbitMQ
 
-#### 🟢 Ángel — Día 3
-> 👉 **Ver código de apoyo:** [GUIA_ANGEL_DIA_3.md](./GUIA_ANGEL_DIA_3.md)
+#### Ángel — Día 3
+> **Ver código de apoyo:** [GUIA_ANGEL_DIA_3.md](./GUIA_ANGEL_DIA_3.md)
 - [ ] Crear proyecto `ms-audit`:
   - Entidad `Log` (append-only)
   - Listener RabbitMQ que consume `cola.auditoria` y persiste en `db_audit`
@@ -166,29 +166,29 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
   - Envío por SMTP (JavaMailSender)
   - DLQ `cola.mails.dlq` tras fallos
 
-#### 🟡 Alejandro — Día 3
+#### Alejandro — Día 3
 - [ ] Configurar `.env` con todas las variables necesarias
 - [ ] Configurar `nginx.conf`
 
 ---
 
-### ⚡ Días 4-5 — Integración completa
+### Días 4-5 — Integración completa
 
 **Orden de prueba sugerido:**
 ```
-1. Eureka arranca ✓
-2. RabbitMQ arranca ✓
-3. MySQL arranca ✓
-4. ms-users arranca y se registra en Eureka ✓
-5. api-gateway arranca ✓
-6. ms-catalog, ms-suppliers, ms-inventory arrancan ✓
-7. ms-audit, ms-mail arrancan ✓
-8. Frontend sirve en :80 ✓
-9. POST /api/auth/register → recibir email ✓
-10. POST /api/auth/login → obtener JWT ✓
-11. POST /api/productos (con JWT ADMIN) → 201 ✓
-12. POST /api/inventario/entrada → 201 ✓
-13. GET /api/auditoria → logs visibles ✓
+1. Eureka arranca 
+2. RabbitMQ arranca 
+3. MySQL arranca 
+4. ms-users arranca y se registra en Eureka 
+5. api-gateway arranca 
+6. ms-catalog, ms-suppliers, ms-inventory arrancan 
+7. ms-audit, ms-mail arrancan 
+8. Frontend sirve en :80 
+9. POST /api/auth/register → recibir email 
+10. POST /api/auth/login → obtener JWT 
+11. POST /api/productos (con JWT ADMIN) → 201 
+12. POST /api/inventario/entrada → 201 
+13. GET /api/auditoria → logs visibles 
 ```
 
 **Mientras tanto, Alejandro** trabaja en el frontend real:
@@ -201,26 +201,26 @@ Frontend (nginx) → API Gateway → [Eureka] → Microservicios
 
 ---
 
-### ⚡ Días 6-7 — Pulido y pruebas finales
+### Días 6-7 — Pulido y pruebas finales
 
-#### 🔵 Lucas — Días 6-7
+#### Lucas — Días 6-7
 - [ ] Manejo correcto de errores: 404, 409 (stock insuficiente), 400
 - [ ] Verificar que `cantidad_disponible` nunca queda negativo
 - [ ] Probar borrado lógico de productos (historial sigue visible)
 
-#### 🟢 Ángel — Días 6-7
+#### Ángel — Días 6-7
 - [ ] Probar flujo completo registro + confirmación + login
 - [ ] Verificar que EMPLEADO recibe 403 en `/api/auditoria`
 - [ ] Verificar 401 con token inválido/caducado
 - [ ] Revisar que mensajes fallidos van a DLQ
 
-#### 🟡 Alejandro — Días 6-7
+#### Alejandro — Días 6-7
 - [ ] Verificar ejecución completa desde cero
 - [ ] Crear `README.md`: cómo arrancar, qué hace cada servicio
 
 ---
 
-## 🔗 Dependencias críticas
+## Dependencias críticas
 
 ```
 JWT_SECRET  (Ángel define día 1, Alejandro pone en .env)
@@ -247,7 +247,7 @@ api-gateway ──[lb://ms-*]──────────── Eureka [resuel
 
 ---
 
-## ⚠️ Reglas de equipo importantes
+## Reglas de equipo importantes
 
 1. **JWT_SECRET**: Alejandro lo define el día 1 (es el responsable de `ms-users`) y lo comunica a Ángel para el Gateway. String de 64 caracteres mínimo. **Crítico: sin esto el Gateway no puede validar tokens.**
 
@@ -275,7 +275,7 @@ api-gateway ──[lb://ms-*]──────────── Eureka [resuel
 
 ---
 
-## 📁 Estructura de carpetas recomendada
+## Estructura de carpetas recomendada
 
 ```
 gestionInventario/
@@ -311,7 +311,7 @@ gestionInventario/
 
 ---
 
-## 📊 Resumen visual de los 7 días
+## Resumen visual de los 7 días
 
 | Día | Lucas | Ángel | Alejandro |
 |-----|-------|-------|-----------|

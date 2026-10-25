@@ -47,7 +47,7 @@ public class ProductoService {
         producto.setSku(skuGenerado);
 
         Producto productoGuardado = productoRepository.save(producto);
-        auditar("POST", productoGuardado.getId(), usuarioEmail, "CreaciÃƒÂ³n de producto: " + producto.getNombre());
+        auditar("POST", productoGuardado.getId(), usuarioEmail, "Creación de producto: " + producto.getNombre());
         return turnToDto(productoGuardado);
     }
 
@@ -77,7 +77,7 @@ public class ProductoService {
         }
 
         Producto productoActualizado = productoRepository.save(producto);
-        auditar("PUT", id, usuarioEmail, "ActualizaciÃƒÂ³n de producto");
+        auditar("PUT", id, usuarioEmail, "Actualización de producto");
         return turnToDto(productoActualizado);
     }
 
@@ -86,12 +86,12 @@ public class ProductoService {
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         producto.setActivo(false);
         productoRepository.save(producto);
-        auditar("DELETE_LOGICO", id, usuarioEmail, "Borrado lÃƒÂ³gico de producto");
+        auditar("DELETE_LOGICO", id, usuarioEmail, "Borrado lógico de producto");
     }
 
     public void eliminarProducto(Long id, String usuarioEmail) {
         productoRepository.deleteById(id);
-        auditar("DELETE_FISICO", id, usuarioEmail, "Borrado fÃƒÂ­sico de producto");
+        auditar("DELETE_FISICO", id, usuarioEmail, "Borrado físico de producto");
     }
 
     public ProductoDTO getProductoById(Long id, String usuarioEmail) {
@@ -111,7 +111,7 @@ public class ProductoService {
     }
 
     public List<ProductoDTO> obtenerProductosPorNombre(String nombre, String usuarioEmail) {
-        auditar("GET_SEARCH", null, usuarioEmail, "BÃƒÂºsqueda de productos activos por nombre: " + nombre);
+        auditar("GET_SEARCH", null, usuarioEmail, "Búsqueda de productos activos por nombre: " + nombre);
         List<Producto> productos = productoRepository.findByNombreContaining(nombre);
 
         return productos.stream()
@@ -120,7 +120,7 @@ public class ProductoService {
     }
 
     public List<ProductoDTO> obtenerProductosInactivosPorNombre(String nombre, String usuarioEmail) {
-        auditar("GET_SEARCH_INACTIVOS", null, usuarioEmail, "BÃƒÂºsqueda de productos inactivos por nombre: " + nombre);
+        auditar("GET_SEARCH_INACTIVOS", null, usuarioEmail, "Búsqueda de productos inactivos por nombre: " + nombre);
         List<Producto> productos = productoRepository.findByNombreContainingAndActivoFalse(nombre);
 
         return productos.stream()

@@ -6,24 +6,24 @@
     <title>Confirmación | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="pagina-centrada">
 
-    <div class="glass-card" style="text-align: center;">
+    <div class="tarjeta centro">
         <div id="loading">
             <h1 class="brand">Verificando...</h1>
             <p class="subtitle">Estamos procesando tu enlace de confirmación.</p>
         </div>
 
-        <div id="success" style="display: none;">
-            <h1 style="color: var(--success);">¡Cuenta Activada!</h1>
+        <div class="oculto" id="success">
+            <h1 class="texto-ok">¡Cuenta Activada!</h1>
             <p class="subtitle">Tu cuenta ha sido confirmada con éxito. Ya puedes empezar a gestionar tu inventario.</p>
             <a href="index.html"><button>Ir al Login</button></a>
         </div>
 
-        <div id="error" style="display: none;">
-            <h1 style="color: var(--error);">Error de Enlace</h1>
+        <div class="oculto" id="error">
+            <h1 class="texto-error">Error de Enlace</h1>
             <p class="subtitle" id="errorMsg">El token de confirmación no es válido o ha expirado.</p>
-            <a href="index.html" style="color: var(--accent); text-decoration: none;">Volver al inicio</a>
+            <a href="index.html">Volver al inicio</a>
         </div>
     </div>
 

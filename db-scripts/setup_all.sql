@@ -122,13 +122,16 @@ USE db_audit;
 
 CREATE TABLE IF NOT EXISTS logs (
     id               BIGINT          NOT NULL AUTO_INCREMENT,
-    producto_id      BIGINT          NOT NULL,
-    proveedor_id     BIGINT          NULL,
+    servicio_origen  VARCHAR(50)     NOT NULL,
+    accion           VARCHAR(255)    NOT NULL,
     usuario_email    VARCHAR(150)    NOT NULL,
-    accion           ENUM('ENTRADA', 'SALIDA') NOT NULL,
-    cantidad         INT             NOT NULL,
-    fecha            DATETIME        NOT NULL,
-    stock_resultante INT             NOT NULL,
+    entidad_id       BIGINT          NULL,
+    producto_id      BIGINT          NULL,
+    proveedor_id     BIGINT          NULL,
+    cantidad         INT             NULL,
+    stock_resultante INT             NULL,
+    detalles         VARCHAR(500)    NULL,
+    fecha            DATETIME(6)     NOT NULL,
 
     PRIMARY KEY (id),
     INDEX idx_logs_producto (producto_id),

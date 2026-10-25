@@ -5,27 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario | Sistema de Inventario</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body style="display: block;">
+<body>
 
     <div class="dashboard-container">
         <aside class="sidebar">
             <div id="sidebarUserProfile" class="sidebar-profile-wrapper"></div>
-            <nav style="margin-top: 1.5rem;">
-                <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-                <a href="productos.html" class="nav-link"><i data-lucide="package"></i> Productos</a>
-                <a href="proveedores.html" class="nav-link"><i data-lucide="truck"></i> Proveedores</a>
-                <a href="inventario.html" class="nav-link active"><i data-lucide="refresh-cw"></i> Inventario</a>
-                <a href="historial.html" class="nav-link"><i data-lucide="history"></i> Historial</a>
-                <a href="usuarios.html" class="nav-link" id="navUsuarios" style="display:none;"><i data-lucide="users"></i> Usuarios</a>
+            <nav class="mt-1">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="proveedores.html" class="nav-link">Proveedores</a>
+                <a href="inventario.html" class="nav-link active">Inventario</a>
+                <a href="historial.html" class="nav-link">Historial</a>
+                <a href="usuarios.html" class="nav-link oculto" id="navUsuarios">Usuarios</a>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
+            <header class="mb-2">
                 <h2>Control de Stock</h2>
-                <p style="color: var(--text-secondary);">Realiza ajustes de inventario, entradas y salidas de mercancía.</p>
+                <p class="texto-suave">Realiza ajustes de inventario, entradas y salidas de mercancía.</p>
             </header>
 
             <!-- Filtros -->
@@ -35,7 +34,7 @@
                 </div>
                 <select id="filterNivel" class="filter-select">
                     <option value="">Todos los niveles</option>
-                    <option value="optimo">Óptimo (≥10)</option>
+                    <option value="optimo">Óptimo (10 o más)</option>
                     <option value="bajo">Stock Bajo (1–9)</option>
                     <option value="agotado">Agotado (0)</option>
                 </select>
@@ -48,22 +47,22 @@
                     <option value="stock-desc">Stock: mayor primero</option>
                     <option value="nombre">Nombre A–Z</option>
                 </select>
-                <div id="colToggleContainer" style="margin-left: auto;"></div>
+                <div class="ml-auto" id="colToggleContainer"></div>
             </div>
 
             <!-- Búsqueda en Servidor (API Backend) para Stock -->
-            <div class="filters-bar" style="margin-top: -0.5rem; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: rgba(0,210,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border);">
-                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="server" style="width:16px;"></i> Consulta en BD:</span>
+            <div class="filters-bar barra-info mb-1">
+                <span class="fila negrita">Consulta en BD:</span>
                 
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                    <input type="number" id="apiSearchStockId" placeholder="ID del Producto..." style="width: 180px; padding: 0.6rem; border-radius: 8px;">
-                    <button id="btnApiStock" class="btn-secondary" style="padding: 0.6rem 1rem;">Buscar Stock</button>
+                <div class="fila">
+                    <input class="ancho-180" type="number" id="apiSearchStockId" placeholder="ID del Producto...">
+                    <button id="btnApiStock" class="btn-secondary">Buscar Stock</button>
                 </div>
                 
-                <button id="btnResetApiStock" class="btn-secondary" style="margin-left: auto; padding: 0.6rem 1rem;" title="Limpiar y recargar"><i data-lucide="refresh-cw" style="width:16px;"></i></button>
+                <button id="btnResetApiStock" class="btn-secondary ml-auto" title="Limpiar y recargar">Limpiar</button>
             </div>
 
-            <p id="resultCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+            <p class="texto-suave texto-chico mb-1" id="resultCount"></p>
 
             <!-- Tabla Stock -->
             <div class="table-container">
@@ -83,11 +82,11 @@
             </div>
 
             <!-- Historial de Movimientos -->
-            <div style="margin-top: 3rem;">
-                <h3 style="margin-bottom: 1.5rem;">Historial de Movimientos</h3>
+            <div class="mt-2">
+                <h3 class="mb-1">Historial de Movimientos</h3>
 
                 <!-- Filtros historial -->
-                <div class="filters-bar" style="margin-bottom: 1rem;">
+                <div class="filters-bar mb-1">
                     <div class="search-box">
                         <input type="text" id="histSearch" placeholder="Buscar por producto...">
                     </div>
@@ -96,10 +95,10 @@
                         <option value="ENTRADA">Entradas</option>
                         <option value="SALIDA">Salidas</option>
                     </select>
-                    <div id="histColToggleContainer" style="margin-left: auto;"></div>
+                    <div class="ml-auto" id="histColToggleContainer"></div>
                 </div>
 
-                <p id="histCount" style="color: var(--text-secondary); font-size:0.9rem; margin-bottom: 1rem;"></p>
+                <p class="texto-suave texto-chico mb-1" id="histCount"></p>
 
                 <div class="table-container">
                     <table id="historyTable">
@@ -126,21 +125,21 @@
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-header">
-                <h3>Ajustar Stock: <span id="targetProdName" style="color: var(--accent);"></span></h3>
-                <button class="close-modal" id="closeModalBtn">&times;</button>
+                <h3>Ajustar Stock: <span class="texto-acento" id="targetProdName"></span></h3>
+                <button class="close-modal" id="closeModalBtn">Cerrar</button>
             </div>
-            <div id="modalMsg" class="alert" style="margin-bottom:1rem;"></div>
+            <div id="modalMsg" class="alert mb-1"></div>
             <form id="adjustmentForm">
                 <input type="hidden" id="targetProdId">
 
                 <div class="form-group">
                     <label>Tipo de Movimiento</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: rgba(0,230,118,0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(0,230,118,0.2);">
-                            <input type="radio" name="moveType" value="IN" checked style="width: auto;"> Entrada (+)
+                    <div class="grid-2">
+                        <label class="opcion opcion-ok">
+                            <input class="ancho-auto" type="radio" name="moveType" value="IN" checked> Entrada (+)
                         </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; background: rgba(255,75,92,0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,75,92,0.2);">
-                            <input type="radio" name="moveType" value="OUT" style="width: auto;"> Salida (-)
+                        <label class="opcion opcion-error">
+                            <input class="ancho-auto" type="radio" name="moveType" value="OUT"> Salida (-)
                         </label>
                     </div>
                 </div>
@@ -157,7 +156,7 @@
                     </select>
                 </div>
 
-                <div id="stockAlert" style="display:none; background: rgba(255,75,92,0.1); color: var(--error); border: 1px solid rgba(255,75,92,0.3); border-radius: 12px; padding: 0.8rem 1rem; font-size:0.9rem; margin-bottom:1rem;"></div>
+                <div class="alert alert-error" id="stockAlert"></div>
 
                 <button type="submit">Confirmar Ajuste</button>
             </form>
@@ -169,7 +168,6 @@
     <script src="js/sidebar.js"></script>
     <script src="js/tableUtils.js"></script>
     <script>
-        lucide.createIcons();
 
         let allProducts = [];
 
@@ -215,7 +213,7 @@
             document.getElementById('resultCount').textContent = `Mostrando ${data.length} de ${allProducts.length} productos`;
 
             if (data.length === 0) {
-                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No se encontraron productos con los filtros aplicados.</td></tr>';
+                inventoryBody.innerHTML = '<tr><td class="mensaje" colspan="6">No se encontraron productos con los filtros aplicados.</td></tr>';
                 return;
             }
             data.forEach(p => {
@@ -223,18 +221,17 @@
                 const badgeClass = stock === 0 ? 'badge-danger' : stock < 10 ? 'badge-warning' : 'badge-stock';
                 const levelText  = stock === 0 ? 'Agotado' : stock < 10 ? 'Bajo' : 'Óptimo';
                 const nombre     = p.nombreProducto ?? p.nombre ?? `Producto #${p.productoId ?? p.id}`;
-                const categoria  = p.categoria ?? '—';
+                const categoria  = p.categoria ?? '-';
 
                 inventoryBody.innerHTML += `
                     <tr>
                         <td>#${p.productoId ?? p.id}</td>
-                        <td style="font-weight: 600;">${nombre}</td>
-                        <td>${categoria}</td>
-                        <td style="font-size: 1.2rem; font-weight: 700;">${stock}</td>
+                        <td class="negrita">${esc(nombre)}</td>
+                        <td>${esc(categoria)}</td>
+                        <td class="texto-grande negrita">${stock}</td>
                         <td><span class="badge ${badgeClass}">${levelText}</span></td>
                         <td>
-                            <button onclick="openAdjustment(${p.productoId ?? p.id}, '${nombre.replace(/'/g,"\\'")}', ${stock})"
-                                style="width:auto; padding:0.4rem 0.8rem; background: var(--accent); color: #0b0f1a; border:none; border-radius:8px; cursor:pointer; font-weight:600;">
+                            <button class="boton-chico" data-nombre="${esc(nombre)}" onclick="openAdjustment(${Number(p.productoId ?? p.id)}, this.dataset.nombre, ${Number(stock)})">
                                 Ajustar
                             </button>
                         </td>
@@ -248,7 +245,7 @@
         let allProveedores = [];
 
         async function loadInventory() {
-            inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: var(--text-secondary);">Cargando...</td></tr>';
+            inventoryBody.innerHTML = '<tr><td class="mensaje" colspan="6">Cargando...</td></tr>';
             try {
                 const [productosRes, stockRes, proveedoresRes] = await Promise.allSettled([
                     api.get('/productos'),
@@ -280,19 +277,19 @@
 
                 const cats = [...new Set(allProducts.map(p => p.categoria).filter(Boolean))].sort();
                 filterCat.innerHTML = '<option value="">Todas las categorías</option>';
-                cats.forEach(c => { filterCat.innerHTML += `<option value="${c}">${c}</option>`; });
+                cats.forEach(c => { filterCat.innerHTML += `<option value="${esc(c)}">${esc(c)}</option>`; });
 
                 const provSelect = document.getElementById('adjProveedor');
                 if(provSelect) {
                     provSelect.innerHTML = '<option value="">-- Selecciona un proveedor --</option>';
                     allProveedores.forEach(prov => {
-                        provSelect.innerHTML += `<option value="${prov.id}">${prov.nombre}</option>`;
+                        provSelect.innerHTML += `<option value="${esc(prov.id)}">${esc(prov.nombre)}</option>`;
                     });
                 }
 
                 renderInventory(allProducts);
             } catch {
-                inventoryBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--error); padding:2rem;">Error al cargar inventario.</td></tr>';
+                inventoryBody.innerHTML = '<tr><td class="mensaje mensaje-error" colspan="6">Error al cargar inventario.</td></tr>';
             }
         }
 
@@ -308,7 +305,7 @@
             const provGroup = document.getElementById('provGroup');
             
             if (currentStock === 0) {
-                stockAlert.textContent = `⚠ Stock actual: 0 unidades. Solo se permite entrada.`;
+                stockAlert.textContent = `Stock actual: 0 unidades. Solo se permite entrada.`;
                 stockAlert.style.display = 'block';
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = true;
                 document.querySelector('input[name="moveType"][value="IN"]').checked = true;
@@ -317,9 +314,7 @@
             } else {
                 stockAlert.textContent = `Stock actual: ${currentStock} unidades.`;
                 stockAlert.style.display = 'block';
-                stockAlert.style.background = 'rgba(0,210,255,0.05)';
-                stockAlert.style.color = 'var(--accent)';
-                stockAlert.style.borderColor = 'rgba(0,210,255,0.2)';
+                stockAlert.className = 'alert alert-info';
                 document.querySelector('input[name="moveType"][value="OUT"]').disabled = false;
                 const isIN = document.querySelector('input[name="moveType"]:checked').value === 'IN';
                 provGroup.style.display = isIN ? 'block' : 'none';
@@ -380,7 +375,7 @@
             const prodId = document.getElementById('apiSearchStockId').value.trim();
             if (!prodId) return;
             
-            document.getElementById('inventoryBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Consultando stock en servidor...</td></tr>';
+            document.getElementById('inventoryBody').innerHTML = '<tr><td class="centro" colspan="6">Consultando stock en servidor...</td></tr>';
             try {
                 const [stockRes, prodRes] = await Promise.allSettled([
                     api.get(`/inventario/stock/${prodId}`),
@@ -400,7 +395,7 @@
                     }];
                 } else {
                     allProducts = [];
-                    document.getElementById('inventoryBody').innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--error);">Stock no encontrado para este ID.</td></tr>';
+                    document.getElementById('inventoryBody').innerHTML = '<tr><td class="centro texto-error" colspan="6">Stock no encontrado para este ID.</td></tr>';
                     document.getElementById('resultCount').textContent = 'Resultados: 0';
                     return;
                 }
@@ -418,7 +413,7 @@
             loadInventory();
         });
 
-        // ── HISTORIAL DE MOVIMIENTOS ──────────────────────────────────────────
+        // HISTORIAL DE MOVIMIENTOS
         let allMovimientos = [];
 
         function renderMovimientos() {
@@ -438,7 +433,7 @@
             document.getElementById('histCount').textContent = `${data.length} movimiento(s) encontrado(s)`;
 
             if (data.length === 0) {
-                body.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-secondary); padding: 2rem;">No hay movimientos registrados.</td></tr>';
+                body.innerHTML = '<tr><td class="mensaje" colspan="8">No hay movimientos registrados.</td></tr>';
                 return;
             }
 
@@ -447,25 +442,25 @@
                 const prod  = allProducts.find(p => p.id === m.productoId || p.productoId === m.productoId);
                 const prov  = allProveedores.find(p => p.id === m.proveedorId);
                 const nombre    = prod ? (prod.nombre || prod.nombreProducto || `#${m.productoId}`) : `#${m.productoId}`;
-                const provNombre = m.proveedorId ? (prov ? prov.nombre : `ID #${m.proveedorId}`) : '—';
-                const fecha = m.fecha ? new Date(m.fecha).toLocaleString('es-ES') : '—';
+                const provNombre = m.proveedorId ? (prov ? prov.nombre : `ID #${m.proveedorId}`) : '-';
+                const fecha = m.fecha ? new Date(m.fecha).toLocaleString('es-ES') : '-';
                 const badge = m.tipo === 'ENTRADA' ? 'badge-stock' : 'badge-danger';
 
                 let qty = m.cantidad;
                 if (m.tipo === 'SALIDA' && qty > 0) qty = -qty;
-                const qtyDisplay = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '—';
-                const qtyColor = qty > 0 ? 'var(--success)' : (qty < 0 ? 'var(--error)' : 'inherit');
+                const qtyDisplay = qty != null ? (qty > 0 ? `+${qty}` : `${qty}`) : '-';
+                const qtyClase = qty > 0 ? 'texto-ok' : (qty < 0 ? 'texto-error' : '');
 
                 body.innerHTML += `
                     <tr>
                         <td>#${m.id}</td>
-                        <td><span class="badge ${badge}">${m.tipo}</span></td>
-                        <td style="font-weight:600;">${nombre}</td>
-                        <td>${provNombre}</td>
-                        <td style="font-weight:700; color:${qtyColor};">${qtyDisplay}</td>
-                        <td>${m.stockResultante ?? '—'}</td>
-                        <td style="color:var(--text-secondary); font-size:0.85rem;">${m.usuarioEmail ?? '—'}</td>
-                        <td style="color:var(--text-secondary); font-size:0.85rem;">${fecha}</td>
+                        <td><span class="badge ${badge}">${esc(m.tipo)}</span></td>
+                        <td class="negrita">${esc(nombre)}</td>
+                        <td>${esc(provNombre)}</td>
+                        <td class="negrita ${qtyClase}">${qtyDisplay}</td>
+                        <td>${m.stockResultante ?? '-'}</td>
+                        <td class="texto-suave texto-chico">${esc(m.usuarioEmail ?? '-')}</td>
+                        <td class="texto-suave texto-chico">${fecha}</td>
                     </tr>
                 `;
             });
@@ -473,11 +468,11 @@
 
         async function loadMovimientos() {
             document.getElementById('movimientosBody').innerHTML =
-                '<tr><td colspan="8" style="text-align:center; padding: 1rem; color:var(--text-secondary);">Cargando historial...</td></tr>';
+                '<tr><td class="mensaje" colspan="8">Cargando historial...</td></tr>';
             const res = await api.get('/inventario/movimientos');
             if (res && res.error) {
                 document.getElementById('movimientosBody').innerHTML =
-                    '<tr><td colspan="8" style="text-align:center; color:var(--error); padding:1rem;">Error al cargar el historial.</td></tr>';
+                    '<tr><td class="mensaje mensaje-error" colspan="8">Error al cargar el historial.</td></tr>';
                 return;
             }
             allMovimientos = Array.isArray(res) ? res : (res.content ?? []);
